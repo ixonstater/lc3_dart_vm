@@ -153,9 +153,10 @@ class Lc3DartAssembler {
     }
     switch (commands[0]) {
       case OpCodes.ADD:
-        writeAdd();
+        writeAddOrAnd();
         break;
       case OpCodes.AND:
+        writeAddOrAnd();
         break;
       case OpCodes.NOT:
         break;
@@ -198,10 +199,10 @@ class Lc3DartAssembler {
     }
   }
 
-  void writeAdd() {
+  void writeAddOrAnd() {
     if (commands.length != 4) {
       throw Exception(
-        'ADD opcode requires exactly three arguments at line: $currentLine.',
+        '${commands[0]} opcode requires exactly three arguments at line: $currentLine.',
       );
     }
     var baseCommand = OpCodes.toBinary(commands[0]);
