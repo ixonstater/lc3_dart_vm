@@ -43,9 +43,8 @@ class OpCodes {
   static final int STIb = 11 << 11;
   static final int STRb = 7 << 11;
   static final int TRAPb = 16 << 11;
-  static final int ERROR = -1;
 
-  int toBinary(String opCode) {
+  static int toBinary(String opCode) {
     switch (opCode) {
       case OpCodes.ADD:
         return OpCodes.ADDb;
@@ -80,7 +79,7 @@ class OpCodes {
       case OpCodes.TRAP:
         return OpCodes.TRAPb;
       default:
-        return OpCodes.ERROR;
+        return -1;
     }
   }
 }
@@ -105,7 +104,7 @@ class Registers {
   static const int R7b = 7;
   static const int ERROR = -1;
 
-  int toBinary(String register, int lShift) {
+  static int toBinary(String register, int lShift) {
     switch (register) {
       case Registers.R0:
         return Registers.R0b << lShift;
@@ -204,7 +203,45 @@ class Lc3DartAssembler {
         'ADD opcode requires exactly three arguments at line: $currentLine.',
       );
     }
-    // int baseCommand = OpCodesB.
+    var baseCommand = OpCodes.toBinary(commands[0]);
+    var destination = Registers.toBinary(commands[1], 9);
+    if (destination == Registers.ERROR) {
+      throw Exception(
+        'Invalid destination register ${commands[1]} on line $currentLine.',
+      );
+    }
+    var sourceOne = Registers.toBinary(commands[2], 6);
+    if (sourceOne == Registers.ERROR) {
+      throw Exception(
+        'Invalid source one register ${commands[2]} on line $currentLine.',
+      );
+    }
+
+    var parsedImmediate = int.tryParse(commands[3]);
+    var sourceTwo;
+    var immediateFlag;
+    if (parsedImmediate != null) {
+      if (parsedImmediate >= (2 ^ 5 - 1)) {
+        throw Exception(
+          'Integers greater than ${2 ^ 5} or 5 bits cannot be used as immediate values on line $currentLine.',
+        );
+      } else {
+        immediateFlag = 1 << 5;
+        sourceTwo = parsedImmediate;
+      }
+    } else {
+      immediateFlag = 0;
+      sourceTwo = Registers.toBinary(commands[3], 0);
+      if (sourceTwo == Registers.ERROR) {
+        throw Exception(
+          'Invalid source two register ${commands[3]} on line $currentLine.',
+        );
+      }
+    }
+
+    var finalCommand =
+        baseCommand | destination | sourceOne | immediateFlag | sourceTwo;
+    bCommands.add(finalCommand);
   }
 }
 
