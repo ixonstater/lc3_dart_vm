@@ -5,10 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "lc3_dart_vm",
+            "name": "Assembler",
             "request": "launch",
             "type": "dart",
-            "program": "${workspaceRoot}/bin/lc3_dart_assembler.dart"
+            "program": "${workspaceRoot}/bin/run_assembler.dart"
+        },
+        {
+            "name": "Tests",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceRoot}/bin/run_tests.dart"
         }
     ]
 }

@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'dart:typed_data';
+import 'dart:math';
 
 class Macros {
-  static const String STRINGZ = 'STRINGZ';
-  static const String ORIG = 'ORIG';
-  static const String END = 'END';
+  static const String STRINGZ = '.STRINGZ';
+  static const String ORIG = '.ORIG';
+  static const String END = '.END';
 }
 
 class OpCodes {
@@ -27,22 +27,22 @@ class OpCodes {
   static const String STR = 'STR';
   static const String TRAP = 'TRAP';
 
-  static final int ADDb = 1 << 11;
-  static final int ANDb = 5 << 11;
-  static final int NOTb = 9 << 11;
-  static final int BRb = 0 << 11;
-  static final int JMPb = 12 << 11;
-  static final int JSRb = 4 << 11;
-  static final int LDb = 2 << 11;
-  static final int LDIb = 10 << 11;
-  static final int LDRb = 6 << 11;
-  static final int LEAb = 15 << 11;
-  static final int RETb = 12 << 11;
-  static final int RTIb = 8 << 11;
-  static final int STb = 3 << 11;
-  static final int STIb = 11 << 11;
-  static final int STRb = 7 << 11;
-  static final int TRAPb = 16 << 11;
+  static final int ADDb = 1 << 12;
+  static final int ANDb = 5 << 12;
+  static final int NOTb = 9 << 12;
+  static final int BRb = 0 << 12;
+  static final int JMPb = 12 << 12;
+  static final int JSRb = 4 << 12;
+  static final int LDb = 2 << 12;
+  static final int LDIb = 10 << 12;
+  static final int LDRb = 6 << 12;
+  static final int LEAb = 15 << 12;
+  static final int RETb = 12 << 12;
+  static final int RTIb = 8 << 12;
+  static final int STb = 3 << 12;
+  static final int STIb = 11 << 12;
+  static final int STRb = 7 << 12;
+  static final int TRAPb = 16 << 12;
 
   static int toBinary(String opCode) {
     switch (opCode) {
@@ -129,14 +129,14 @@ class Registers {
 }
 
 class Lc3DartAssembler {
-  Int16List bCommands = Int16List(0);
+  List<int> bCommands = [];
   List<String> commands = [];
   int currentLine = 1;
 
   void assemble(String path) {
     File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
       (line) {
-        commands = line.split(r'[ \t]+');
+        commands = line.split(RegExp('[ \t]+'));
         routeOpCode();
         currentLine++;
       },
@@ -153,6 +153,7 @@ class Lc3DartAssembler {
     }
     switch (commands[0]) {
       case OpCodes.ADD:
+        writeAdd();
         break;
       case OpCodes.AND:
         break;
@@ -221,9 +222,10 @@ class Lc3DartAssembler {
     var sourceTwo;
     var immediateFlag;
     if (parsedImmediate != null) {
-      if (parsedImmediate >= (2 ^ 5 - 1)) {
+      var immediateLimit = pow(2, 5) - 1;
+      if (parsedImmediate > (immediateLimit)) {
         throw Exception(
-          'Integers greater than ${2 ^ 5} or 5 bits cannot be used as immediate values on line $currentLine.',
+          'Integers greater than $immediateLimit (5 bits) cannot be used as immediate values on line $currentLine.',
         );
       } else {
         immediateFlag = 1 << 5;
@@ -243,9 +245,4 @@ class Lc3DartAssembler {
         baseCommand | destination | sourceOne | immediateFlag | sourceTwo;
     bCommands.add(finalCommand);
   }
-}
-
-void main(List<String> args) {
-  var obj = Lc3DartAssembler();
-  obj.assemble('./test.asm');
 }
