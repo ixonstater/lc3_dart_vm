@@ -138,8 +138,12 @@ class Lc3DartAssembler {
   void assemble(String path) {
     File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
       (line) {
-        commands = line.split(RegExp('[ \t]+'));
-        routeOpCode();
+        line = removeCommentFromLine(line);
+        if (line.isNotEmpty) {
+          commands = line.split(RegExp('[ \t]+'));
+          routeOpCode();
+        }
+
         currentLine++;
       },
     );
@@ -148,6 +152,15 @@ class Lc3DartAssembler {
   }
 
   void writeBinaryFile(String path) {}
+
+  String removeCommentFromLine(String line) {
+    var hasSemi = line.indexOf(';');
+    if (hasSemi != -1) {
+      return line.substring(0, hasSemi);
+    } else {
+      return line;
+    }
+  }
 
   void routeOpCode() {
     if (commands.isEmpty) {
