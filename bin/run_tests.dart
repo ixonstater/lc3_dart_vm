@@ -4,4 +4,5 @@ void main(List<String> args) {
   testAdd();
   testAnd();
   testNot();
+  testCommentRemoval();
 }

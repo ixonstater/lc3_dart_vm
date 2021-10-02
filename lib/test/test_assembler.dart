@@ -71,3 +71,17 @@ void testNot() {
     expect(obj.writeNot, throwsException);
   });
 }
+
+void testCommentRemoval() {
+  test('Remove standalone comment.', () {
+    var line = Lc3DartAssembler()
+        .removeCommentFromLine(';A test comment; comment; comment');
+    expect(line, '');
+  });
+
+  test('Remove comment from code line.', () {
+    var line = Lc3DartAssembler()
+        .removeCommentFromLine('ADD R0 R2 30;A test comment; comment; comment');
+    expect(line, 'ADD R0 R2 30');
+  });
+}
