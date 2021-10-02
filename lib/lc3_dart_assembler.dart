@@ -133,9 +133,71 @@ class Registers {
 class Lc3DartAssembler {
   List<int> bCommands = [];
   List<String> commands = [];
+  Map<String, int> labels = {};
   int currentLine = 1;
+  int origin = 3000;
 
   void assemble(String path) {
+    markLabels(path);
+    processOpCodes(path);
+    writeBinaryFile(path);
+  }
+
+  void writeBinaryFile(String path) {}
+
+  void markLabels(String path) {
+    currentLine = 1;
+    var hasMarkedOrigin = false;
+    File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
+      (line) {
+        line = removeCommentFromLine(line);
+        if (line.isNotEmpty) {
+          commands = line.split(RegExp('[ \t]+'));
+          if (hasMarkedOrigin) {
+            tryMarkLabel(commands[0]);
+          } else {
+            markOrigin();
+            hasMarkedOrigin = true;
+          }
+        }
+
+        currentLine++;
+      },
+    );
+  }
+
+  void markOrigin() {
+    //TODO: Write tests for this method
+    if (commands.length != 2) {
+      throw Exception(
+        'LC3 programs must begin with the .ORIG macro which takes one operand.',
+      );
+    } else if (commands[0].toUpperCase() != Macros.ORIG) {
+      throw Exception('LC3 programs must begin with the .ORIG macro.');
+    }
+
+    var originParsed = parseInt(commands[1]);
+    if (originParsed == null) {
+      throw Exception('Unable to parse operand of .ORIG macro.');
+    } else {
+      origin = originParsed;
+    }
+  }
+
+  void tryMarkLabel(String label) {
+    if (OpCodes.toBinary(label) == -1) {
+      if (labels.containsKey(label)) {
+        throw Exception(
+          'Illegal redefinition of label $label on line $currentLine.',
+        );
+      } else {
+        labels[label] = origin + currentLine;
+      }
+    }
+  }
+
+  void processOpCodes(String path) {
+    currentLine = 1;
     File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
       (line) {
         line = removeCommentFromLine(line);
@@ -147,11 +209,7 @@ class Lc3DartAssembler {
         currentLine++;
       },
     );
-
-    writeBinaryFile(path);
   }
-
-  void writeBinaryFile(String path) {}
 
   String removeCommentFromLine(String line) {
     var hasSemi = line.indexOf(';');
@@ -205,6 +263,7 @@ class Lc3DartAssembler {
       case Macros.END:
         break;
       case Macros.ORIG:
+        writeOrigin();
         break;
       case Macros.STRINGZ:
         break;
@@ -286,5 +345,26 @@ class Lc3DartAssembler {
 
     var finalCommand = baseCommand | destination | source | paddedOnes;
     bCommands.add(finalCommand);
+  }
+
+  void writeBr() {
+    if (commands.length != 3) {
+      throw Exception(
+        '${commands[0]} opcode requires exactly three arguments at line: $currentLine.',
+      );
+    }
+  }
+
+  int? parseInt(String num) {
+    //TODO: Test this method too
+    var result = int.tryParse(num, radix: 16);
+    if (result != null) {
+      return result;
+    }
+
+    result = int.tryParse(num, radix: 10);
+    if (result != null) {
+      return result;
+    }
   }
 }
