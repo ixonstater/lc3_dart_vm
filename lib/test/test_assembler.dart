@@ -34,14 +34,14 @@ void testAnd() {
     var obj = Lc3DartAssembler();
     obj.commands = ['AND', 'R0', 'R1', 'R3'];
     obj.writeAddOrAnd();
-    expect(4163, obj.bCommands[0]);
+    expect(20547, obj.bCommands[0]);
   });
 
   test('Successfully and with immediate value.', () {
     var obj = Lc3DartAssembler();
     obj.commands = ['AND', 'R7', 'R3', '30'];
     obj.writeAddOrAnd();
-    expect(7934, obj.bCommands[0]);
+    expect(24318, obj.bCommands[0]);
   });
 
   test('Fail to and with mis-named register.', () {
