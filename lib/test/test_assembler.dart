@@ -56,3 +56,18 @@ void testAnd() {
     expect(obj.writeAddOrAnd, throwsException);
   });
 }
+
+void testNot() {
+  test('Succesfully not with mixed case command.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['Not', 'r1', 'r2'];
+    obj.writeNot();
+    expect(obj.bCommands[0], 37567);
+  });
+
+  test('Fail to not with too many arguments.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['NOT', 'R0', 'R4', 'R5'];
+    expect(obj.writeNot, throwsException);
+  });
+}

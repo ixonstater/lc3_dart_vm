@@ -45,6 +45,7 @@ class OpCodes {
   static final int TRAPb = 16 << 12;
 
   static int toBinary(String opCode) {
+    opCode = opCode.toUpperCase();
     switch (opCode) {
       case OpCodes.ADD:
         return OpCodes.ADDb;
@@ -105,6 +106,7 @@ class Registers {
   static const int ERROR = -1;
 
   static int toBinary(String register, int lShift) {
+    register = register.toUpperCase();
     switch (register) {
       case Registers.R0:
         return Registers.R0b << lShift;
@@ -149,9 +151,9 @@ class Lc3DartAssembler {
 
   void routeOpCode() {
     if (commands.isEmpty) {
-      throw Exception('Found an empty line at: $currentLine');
+      return;
     }
-    switch (commands[0]) {
+    switch (commands[0].toUpperCase()) {
       case OpCodes.ADD:
         writeAddOrAnd();
         break;
@@ -159,6 +161,7 @@ class Lc3DartAssembler {
         writeAddOrAnd();
         break;
       case OpCodes.NOT:
+        writeNot();
         break;
       case OpCodes.BR:
         break;
@@ -244,6 +247,31 @@ class Lc3DartAssembler {
 
     var finalCommand =
         baseCommand | destination | sourceOne | immediateFlag | sourceTwo;
+    bCommands.add(finalCommand);
+  }
+
+  void writeNot() {
+    if (commands.length != 3) {
+      throw Exception(
+        '${commands[0]} opcode requires exactly three arguments at line: $currentLine.',
+      );
+    }
+    var baseCommand = OpCodes.toBinary(commands[0]);
+    var destination = Registers.toBinary(commands[1], 9);
+    if (destination == Registers.ERROR) {
+      throw Exception(
+        'Invalid destination register ${commands[1]} on line $currentLine.',
+      );
+    }
+    var source = Registers.toBinary(commands[2], 6);
+    if (source == Registers.ERROR) {
+      throw Exception(
+        'Invalid source register ${commands[2]} on line $currentLine.',
+      );
+    }
+    var paddedOnes = 63;
+
+    var finalCommand = baseCommand | destination | source | paddedOnes;
     bCommands.add(finalCommand);
   }
 }
