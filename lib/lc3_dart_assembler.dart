@@ -207,7 +207,6 @@ class Lc3DartAssembler {
   }
 
   void tryMarkLabel(String label) {
-    //TODO: Test this method
     var isOpcode = OpCodes.toBinary(label) != -1;
     var isMacro = Macros.isMacro(label);
     // If the label is not an opcode or a macro it must be a

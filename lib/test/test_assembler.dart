@@ -156,3 +156,23 @@ void testMarkOrigin() {
     expect(obj.markOrigin, throwsException);
   });
 }
+
+void testTryMarkLabel() {
+  var obj = Lc3DartAssembler();
+  obj.origin = 20000;
+
+  test('Ignore opcode line.', () {
+    obj.tryMarkLabel('ADd');
+    expect(obj.labels.containsKey('ADd'), false);
+  });
+
+  test('Ignore macro line.', () {
+    obj.tryMarkLabel('ADd');
+    expect(obj.labels.containsKey('.stringZ'), false);
+  });
+
+  test('Add label.', () {
+    obj.tryMarkLabel('testL');
+    expect(obj.labels.containsKey('testL'), true);
+  });
+}
