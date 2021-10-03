@@ -6,8 +6,6 @@ void testAssembler() {
   testNot();
   testCommentRemoval();
   testParseInt();
-  testMarkOrigin();
-  testTryMarkLabel();
 }
 
 void main(List<String> args) {

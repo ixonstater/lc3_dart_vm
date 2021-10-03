@@ -74,109 +74,40 @@ void testNot() {
 
 void testCommentRemoval() {
   test('Remove standalone comment.', () {
-    var line = Lc3DartAssembler()
-        .removeCommentFromLine(';A test comment; comment; comment');
+    var line = removeCommentFromLine(';A test comment; comment; comment');
     expect(line, '');
   });
 
   test('Remove comment from code line.', () {
-    var line = Lc3DartAssembler()
-        .removeCommentFromLine('ADD R0 R2 30;A test comment; comment; comment');
+    var line =
+        removeCommentFromLine('ADD R0 R2 30;A test comment; comment; comment');
     expect(line, 'ADD R0 R2 30');
   });
 }
 
 void testParseInt() {
   test('Test parsing base 10 integer.', () {
-    var obj = Lc3DartAssembler();
-    var parsed = obj.parseInt('100');
+    var parsed = parseInt('100');
     expect(parsed, 100);
   });
 
   test('Fail parsing malformed base 10 integer.', () {
-    var obj = Lc3DartAssembler();
-    var parsed = obj.parseInt('10f0');
+    var parsed = parseInt('10f0');
     expect(parsed, null);
   });
 
   test('Test parsing base 16 integer with 0x marker.', () {
-    var obj = Lc3DartAssembler();
-    var parsed = obj.parseInt('0x100');
+    var parsed = parseInt('0x100');
     expect(parsed, 256);
   });
 
   test('Test parsing base 16 integer with x marker.', () {
-    var obj = Lc3DartAssembler();
-    var parsed = obj.parseInt('x101');
+    var parsed = parseInt('x101');
     expect(parsed, 257);
   });
 
   test('Fail parsing malformed base 16 integer.', () {
-    var obj = Lc3DartAssembler();
-    var parsed = obj.parseInt('0x100cvw');
+    var parsed = parseInt('0x100cvw');
     expect(parsed, null);
-  });
-}
-
-void testMarkOrigin() {
-  test('Succesfully mark program origin.', () {
-    var obj = Lc3DartAssembler();
-    obj.commands = ['.ORIG', '0X3000'];
-    obj.markOrigin();
-    expect(obj.origin, 12288);
-  });
-
-  test('Fail with too few arguments.', () {
-    var obj = Lc3DartAssembler();
-    obj.commands = ['.ORIG'];
-    expect(obj.markOrigin, throwsException);
-  });
-
-  test('Fail with malformed orig macro.', () {
-    var obj = Lc3DartAssembler();
-    obj.commands = ['RIG'];
-    expect(obj.markOrigin, throwsException);
-  });
-
-  test('Fail with malformed integer operand.', () {
-    var obj = Lc3DartAssembler();
-    obj.commands = ['.ORIG', '0xfdax'];
-    expect(obj.markOrigin, throwsException);
-  });
-
-  test('Fail with origin set above valid constraints.', () {
-    var obj = Lc3DartAssembler();
-    obj.commands = ['.ORIG', '0xfe00'];
-    expect(obj.markOrigin, throwsException);
-  });
-
-  test('Fail with origin set below valid constraints.', () {
-    var obj = Lc3DartAssembler();
-    obj.commands = ['.ORIG', '0x2fff'];
-    expect(obj.markOrigin, throwsException);
-  });
-}
-
-void testTryMarkLabel() {
-  var obj = Lc3DartAssembler();
-  obj.origin = 20000;
-
-  test('Ignore opcode line.', () {
-    obj.tryMarkLabel(['ADd']);
-    expect(obj.labels.containsKey('ADd'), false);
-  });
-
-  test('Ignore macro line.', () {
-    obj.tryMarkLabel(['.stringZ']);
-    expect(obj.labels.containsKey('.stringZ'), false);
-  });
-
-  test('Add label.', () {
-    obj.tryMarkLabel(['testL']);
-    expect(obj.labels.containsKey('testL'), true);
-  });
-
-  test('Test allocating space for string in label marker.', () {
-    var obj = Lc3DartAssembler();
   });
 }

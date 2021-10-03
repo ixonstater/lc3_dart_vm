@@ -153,103 +153,17 @@ class Traps {
 class Lc3DartAssembler {
   List<int> bCommands = [];
   List<String> commands = [];
-  Map<String, int> labels = {};
   int currentLine = 1;
   int memoryOffset = 0;
-  int origin = 3000;
-  final int minimumMemorySpace = 12288;
-  final int maximumMemorySpace = 65023;
+  Lc3DartSymbols symbols = Lc3DartSymbols();
 
   void assemble(String path) {
-    markLabels(path);
+    symbols.markSymbols(path);
     processOpCodes(path);
     writeBinaryFile(path);
   }
 
   void writeBinaryFile(String path) {}
-
-  void markLabels(String path) {
-    currentLine = 1;
-    memoryOffset = 0;
-    var hasMarkedOrigin = false;
-    File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
-      (line) {
-        line = removeCommentFromLine(line);
-        if (line.isNotEmpty) {
-          commands = line.split(RegExp('[ \t]+'));
-          if (hasMarkedOrigin) {
-            tryMarkLabel(commands);
-          } else {
-            markOrigin();
-            hasMarkedOrigin = true;
-          }
-
-          currentLine++;
-        }
-      },
-    );
-  }
-
-  void markOrigin() {
-    if (commands.length != 2) {
-      throw Exception(
-        'LC3 programs must begin with the .ORIG macro which takes one operand.',
-      );
-    } else if (commands[0].toUpperCase() != Macros.ORIG) {
-      throw Exception('LC3 programs must begin with the .ORIG macro.');
-    }
-
-    var originParsed = parseInt(commands[1]);
-    if (originParsed == null) {
-      throw Exception('Unable to parse operand of .ORIG macro.');
-    } else if (originParsed < minimumMemorySpace ||
-        originParsed > maximumMemorySpace) {
-      throw Exception('LC3 programs must start between 0X3000 and 0XFDFF');
-    } else {
-      origin = originParsed;
-    }
-  }
-
-  void tryMarkLabel(List<String> commands) {
-    var isOpcode = OpCodes.toBinary(commands[0]) != -1;
-    var isMacro = Macros.isMacro(commands[0]);
-    // If the label is not an opcode or a macro it must be a
-    // user defined symbol.
-    if (!(isOpcode || isMacro)) {
-      if (labels.containsKey(commands[0])) {
-        throw Exception(
-          'Illegal redefinition of label ${commands[0]} on line $currentLine.',
-        );
-      } else {
-        labels[commands[0]] = origin + memoryOffset;
-        processStringInLabelMarker(commands);
-        processBlkwInLabelMarker(commands);
-      }
-    }
-  }
-
-  void processStringInLabelMarker(List<String> commands) {
-    // TODO:Test this function.
-    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
-      // Set memory offset to length of string plus one location for null
-      // terminator.
-      memoryOffset += commands[1].length + 1;
-    }
-  }
-
-  void processBlkwInLabelMarker(List<String> commands) {
-    // TODO:Test this function.
-    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
-      var blockSize = parseInt(commands[1]);
-      if (blockSize == null) {
-        throw Exception(
-          'Failed to parse blocksize in .BLKW macro on line $currentLine.',
-        );
-      } else {
-        memoryOffset += blockSize;
-      }
-    }
-  }
 
   void processOpCodes(String path) {
     currentLine = 1;
@@ -263,15 +177,6 @@ class Lc3DartAssembler {
         }
       },
     );
-  }
-
-  String removeCommentFromLine(String line) {
-    var hasSemi = line.indexOf(';');
-    if (hasSemi != -1) {
-      return line.substring(0, hasSemi);
-    } else {
-      return line;
-    }
   }
 
   void routeOpCode() {
@@ -407,15 +312,115 @@ class Lc3DartAssembler {
       );
     }
   }
+}
 
-  int? parseInt(String num) {
-    num = num.toUpperCase();
-    if (num.contains('0X') || num.contains('X')) {
-      num = num.replaceFirst('0X', '');
-      num = num.replaceFirst('X', '');
-      return int.tryParse(num, radix: 16);
-    } else {
-      return int.tryParse(num, radix: 10);
+class Lc3DartSymbols {
+  Map<String, int> labels = {};
+  int origin = 0x3000;
+  int memoryOffset = 0;
+  int currentLine = 1;
+
+  final int minimumMemorySpace = 12288;
+  final int maximumMemorySpace = 65023;
+
+  void markSymbols(String path) {
+    File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
+      (line) {
+        line = removeCommentFromLine(line);
+        if (line.isNotEmpty) {
+          processSymbolLine(line);
+          currentLine++;
+        }
+      },
+    );
+  }
+
+  void processSymbolLine(String line) {
+    var firstWord = line.substring(0, line.indexOf(RegExp('[ \t]+')));
+    var isOpcode = OpCodes.toBinary(firstWord) != -1;
+    var isMacro = Macros.isMacro(firstWord);
+
+    if (firstWord.toUpperCase() == Macros.ORIG) {
+      markOrigin(line);
+    } else if (!(isOpcode || isMacro)) {
+      markSymbol(line);
     }
+  }
+
+  void markOrigin(String line) {
+    var commands = line.split(RegExp('[ \t]+'));
+    var originParsed = parseInt(commands[1]);
+    if (originParsed == null) {
+      throw Exception(
+        'Unable to parse operand of .ORIG macro on line $currentLine.',
+      );
+    } else if (originParsed < minimumMemorySpace ||
+        originParsed > maximumMemorySpace) {
+      throw Exception(
+        'LC3 .ORIG must be between 0X3000 and 0XFDFF on line $currentLine.',
+      );
+    } else {
+      origin = originParsed;
+    }
+  }
+
+  void markSymbol(String line) {
+    var spaceIndicies = line.allMatches(' ');
+    print('test');
+
+    // if (labels.containsKey(commands[0])) {
+    //   throw Exception(
+    //     'Illegal redefinition of label ${commands[0]} on line $currentLine.',
+    //   );
+    // } else {
+    //   labels[commands[0]] = origin + memoryOffset;
+    //   processStringzInSymbol(commands);
+    //   processBlkwInSymbol(commands);
+    // }
+  }
+
+  void processSingleLocationSymbol() {}
+
+  void processStringzSymbol(List<String> commands) {
+    // TODO:Test this function.
+    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
+      // Set memory offset to length of string plus one location for null
+      // terminator.
+      memoryOffset += commands[1].length + 1;
+    }
+  }
+
+  void processBlkwSymbol(List<String> commands) {
+    // TODO:Test this function.
+    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
+      var blockSize = parseInt(commands[1]);
+      if (blockSize == null) {
+        throw Exception(
+          'Failed to parse blocksize in .BLKW macro on line $currentLine.',
+        );
+      } else {
+        memoryOffset += blockSize;
+      }
+    }
+  }
+}
+
+String removeCommentFromLine(String line) {
+  var hasSemi = line.indexOf(';');
+  if (hasSemi != -1) {
+    return line.substring(0, hasSemi);
+  } else {
+    return line;
+  }
+}
+
+int? parseInt(String num) {
+  num = num.toUpperCase();
+  if (num.contains('0X') || num.contains('X')) {
+    num = num.replaceFirst('0X', '');
+    num = num.replaceFirst('X', '');
+    return int.tryParse(num, radix: 16);
+  } else {
+    return int.tryParse(num, radix: 10);
   }
 }
