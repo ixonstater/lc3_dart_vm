@@ -7,6 +7,7 @@ class Macros {
   static const String STRINGZ = '.STRINGZ';
   static const String ORIG = '.ORIG';
   static const String END = '.END';
+  static const String FILL = '.FILL';
 }
 
 class OpCodes {
@@ -263,7 +264,6 @@ class Lc3DartAssembler {
       case Macros.END:
         break;
       case Macros.ORIG:
-        writeOrigin();
         break;
       case Macros.STRINGZ:
         break;
@@ -356,15 +356,13 @@ class Lc3DartAssembler {
   }
 
   int? parseInt(String num) {
-    //TODO: Test this method too
-    var result = int.tryParse(num, radix: 16);
-    if (result != null) {
-      return result;
-    }
-
-    result = int.tryParse(num, radix: 10);
-    if (result != null) {
-      return result;
+    num = num.toUpperCase();
+    if (num.contains('0X') || num.contains('X')) {
+      num = num.replaceFirst('0X', '');
+      num = num.replaceFirst('X', '');
+      return int.tryParse(num, radix: 16);
+    } else {
+      return int.tryParse(num, radix: 10);
     }
   }
 }

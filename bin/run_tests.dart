@@ -5,4 +5,5 @@ void main(List<String> args) {
   testAnd();
   testNot();
   testCommentRemoval();
+  testParseInt();
 }

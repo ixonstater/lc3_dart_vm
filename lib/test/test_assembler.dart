@@ -85,3 +85,39 @@ void testCommentRemoval() {
     expect(line, 'ADD R0 R2 30');
   });
 }
+
+void testParseInt() {
+  test('Test parsing base 10 integer.', () {
+    var obj = Lc3DartAssembler();
+    var parsed = obj.parseInt('100');
+    expect(parsed, 100);
+  });
+
+  test('Fail parsing malformed base 10 integer.', () {
+    var obj = Lc3DartAssembler();
+    var parsed = obj.parseInt('10f0');
+    expect(parsed, null);
+  });
+
+  test('Test parsing base 16 integer with 0x marker.', () {
+    var obj = Lc3DartAssembler();
+    var parsed = obj.parseInt('0x100');
+    expect(parsed, 256);
+  });
+
+  test('Test parsing base 16 integer with x marker.', () {
+    var obj = Lc3DartAssembler();
+    var parsed = obj.parseInt('x101');
+    expect(parsed, 257);
+  });
+
+  test('Fail parsing malformed base 16 integer.', () {
+    var obj = Lc3DartAssembler();
+    var parsed = obj.parseInt('0x100cvw');
+    expect(parsed, null);
+  });
+}
+
+void testMarkOrigin() {
+  test('', () {});
+}
