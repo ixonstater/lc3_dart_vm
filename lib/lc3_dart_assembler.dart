@@ -8,6 +8,14 @@ class Macros {
   static const String ORIG = '.ORIG';
   static const String END = '.END';
   static const String FILL = '.FILL';
+
+  static bool isMacro(String macro) {
+    macro = macro.toUpperCase();
+    return macro == Macros.STRINGZ ||
+        macro == Macros.ORIG ||
+        macro == Macros.END ||
+        macro == Macros.FILL;
+  }
 }
 
 class OpCodes {
@@ -131,6 +139,15 @@ class Registers {
   }
 }
 
+class Traps {
+  static const String GETC = 'GETC';
+  static const String OUT = 'OUT';
+  static const String PUTS = 'PUTS';
+  static const String IN = 'IN';
+  static const String PUTSP = 'PUTSP';
+  static const String HALT = 'HALT';
+}
+
 class Lc3DartAssembler {
   List<int> bCommands = [];
   List<String> commands = [];
@@ -162,15 +179,14 @@ class Lc3DartAssembler {
             markOrigin();
             hasMarkedOrigin = true;
           }
-        }
 
-        currentLine++;
+          currentLine++;
+        }
       },
     );
   }
 
   void markOrigin() {
-    //TODO: Write tests for this method
     if (commands.length != 2) {
       throw Exception(
         'LC3 programs must begin with the .ORIG macro which takes one operand.',
@@ -191,13 +207,18 @@ class Lc3DartAssembler {
   }
 
   void tryMarkLabel(String label) {
-    if (OpCodes.toBinary(label) == -1) {
+    //TODO: Test this method
+    var isOpcode = OpCodes.toBinary(label) != -1;
+    var isMacro = Macros.isMacro(label);
+    // If the label is not an opcode or a macro it must be a
+    // user defined symbol.
+    if (!(isOpcode || isMacro)) {
       if (labels.containsKey(label)) {
         throw Exception(
           'Illegal redefinition of label $label on line $currentLine.',
         );
       } else {
-        labels[label] = origin + currentLine;
+        labels[label] = origin + currentLine - 1;
       }
     }
   }
@@ -210,9 +231,8 @@ class Lc3DartAssembler {
         if (line.isNotEmpty) {
           commands = line.split(RegExp('[ \t]+'));
           routeOpCode();
+          currentLine++;
         }
-
-        currentLine++;
       },
     );
   }
