@@ -137,6 +137,8 @@ class Lc3DartAssembler {
   Map<String, int> labels = {};
   int currentLine = 1;
   int origin = 3000;
+  final int minimumMemorySpace = 12288;
+  final int maximumMemorySpace = 65023;
 
   void assemble(String path) {
     markLabels(path);
@@ -180,6 +182,9 @@ class Lc3DartAssembler {
     var originParsed = parseInt(commands[1]);
     if (originParsed == null) {
       throw Exception('Unable to parse operand of .ORIG macro.');
+    } else if (originParsed < minimumMemorySpace ||
+        originParsed > maximumMemorySpace) {
+      throw Exception('LC3 programs must start between 0X3000 and 0XFDFF');
     } else {
       origin = originParsed;
     }

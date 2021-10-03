@@ -6,4 +6,5 @@ void main(List<String> args) {
   testNot();
   testCommentRemoval();
   testParseInt();
+  testMarkOrigin();
 }

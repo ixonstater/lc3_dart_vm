@@ -119,5 +119,40 @@ void testParseInt() {
 }
 
 void testMarkOrigin() {
-  test('', () {});
+  test('Succesfully mark program origin.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['.ORIG', '0X3000'];
+    obj.markOrigin();
+    expect(obj.origin, 12288);
+  });
+
+  test('Fail with too few arguments.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['.ORIG'];
+    expect(obj.markOrigin, throwsException);
+  });
+
+  test('Fail with malformed orig macro.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['RIG'];
+    expect(obj.markOrigin, throwsException);
+  });
+
+  test('Fail with malformed integer operand.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['.ORIG', '0xfdax'];
+    expect(obj.markOrigin, throwsException);
+  });
+
+  test('Fail with origin set above valid constraints.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['.ORIG', '0xfe00'];
+    expect(obj.markOrigin, throwsException);
+  });
+
+  test('Fail with origin set below valid constraints.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['.ORIG', '0x2fff'];
+    expect(obj.markOrigin, throwsException);
+  });
 }

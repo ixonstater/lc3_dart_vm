@@ -1,4 +1,4 @@
-.ORIG 3000;testcomment
+.ORIG 0x3000;testcomment
 ;testcomment
 ADD R0   R1 R3
 labelOne
