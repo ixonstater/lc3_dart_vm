@@ -5,6 +5,7 @@ import 'dart:math';
 
 class Macros {
   static const String STRINGZ = '.STRINGZ';
+  static const String BLKW = '.BLKW';
   static const String ORIG = '.ORIG';
   static const String END = '.END';
   static const String FILL = '.FILL';
@@ -14,7 +15,8 @@ class Macros {
     return macro == Macros.STRINGZ ||
         macro == Macros.ORIG ||
         macro == Macros.END ||
-        macro == Macros.FILL;
+        macro == Macros.FILL ||
+        macro == Macros.BLKW;
   }
 }
 
@@ -153,6 +155,7 @@ class Lc3DartAssembler {
   List<String> commands = [];
   Map<String, int> labels = {};
   int currentLine = 1;
+  int memoryOffset = 0;
   int origin = 3000;
   final int minimumMemorySpace = 12288;
   final int maximumMemorySpace = 65023;
@@ -167,6 +170,7 @@ class Lc3DartAssembler {
 
   void markLabels(String path) {
     currentLine = 1;
+    memoryOffset = 0;
     var hasMarkedOrigin = false;
     File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
       (line) {
@@ -174,7 +178,7 @@ class Lc3DartAssembler {
         if (line.isNotEmpty) {
           commands = line.split(RegExp('[ \t]+'));
           if (hasMarkedOrigin) {
-            tryMarkLabel(commands[0]);
+            tryMarkLabel(commands);
           } else {
             markOrigin();
             hasMarkedOrigin = true;
@@ -206,18 +210,43 @@ class Lc3DartAssembler {
     }
   }
 
-  void tryMarkLabel(String label) {
-    var isOpcode = OpCodes.toBinary(label) != -1;
-    var isMacro = Macros.isMacro(label);
+  void tryMarkLabel(List<String> commands) {
+    var isOpcode = OpCodes.toBinary(commands[0]) != -1;
+    var isMacro = Macros.isMacro(commands[0]);
     // If the label is not an opcode or a macro it must be a
     // user defined symbol.
     if (!(isOpcode || isMacro)) {
-      if (labels.containsKey(label)) {
+      if (labels.containsKey(commands[0])) {
         throw Exception(
-          'Illegal redefinition of label $label on line $currentLine.',
+          'Illegal redefinition of label ${commands[0]} on line $currentLine.',
         );
       } else {
-        labels[label] = origin + currentLine - 1;
+        labels[commands[0]] = origin + memoryOffset;
+        processStringInLabelMarker(commands);
+        processBlkwInLabelMarker(commands);
+      }
+    }
+  }
+
+  void processStringInLabelMarker(List<String> commands) {
+    // TODO:Test this function.
+    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
+      // Set memory offset to length of string plus one location for null
+      // terminator.
+      memoryOffset += commands[1].length + 1;
+    }
+  }
+
+  void processBlkwInLabelMarker(List<String> commands) {
+    // TODO:Test this function.
+    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
+      var blockSize = parseInt(commands[1]);
+      if (blockSize == null) {
+        throw Exception(
+          'Failed to parse blocksize in .BLKW macro on line $currentLine.',
+        );
+      } else {
+        memoryOffset += blockSize;
       }
     }
   }
