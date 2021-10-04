@@ -6,6 +6,7 @@ void testAssembler() {
   testNot();
   testCommentRemoval();
   testParseInt();
+  testReplaceEscapedQuotes();
 }
 
 void main(List<String> args) {

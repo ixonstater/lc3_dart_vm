@@ -83,6 +83,11 @@ void testCommentRemoval() {
         removeCommentFromLine('ADD R0 R2 30;A test comment; comment; comment');
     expect(line, 'ADD R0 R2 30');
   });
+
+  test('Remove comment with space from code line', () {
+    var line = removeCommentFromLine('ADD R0 R2 30      ;test comment');
+    expect(line, 'ADD R0 R2 30');
+  });
 }
 
 void testParseInt() {
@@ -109,5 +114,21 @@ void testParseInt() {
   test('Fail parsing malformed base 16 integer.', () {
     var parsed = parseInt('0x100cvw');
     expect(parsed, null);
+  });
+}
+
+void testReplaceEscapedQuotes() {
+  test('Parse basic string', () {
+    var value = replaceEscapedQuotes('"Hello world."');
+    expect(value, 'Hello world.');
+  });
+
+  test('Sucessfully parse string with escaped quotes.', () {
+    var value = replaceEscapedQuotes('"Hel\\"lo w\\"or\\"ld."');
+    expect(value, 'Hel"lo w"or"ld.');
+  });
+
+  test('Fail to parse non-terminated string.', () {
+    expect(replaceEscapedQuotes('"Hello world.'), null);
   });
 }

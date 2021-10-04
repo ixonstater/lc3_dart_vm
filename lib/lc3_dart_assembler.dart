@@ -315,7 +315,7 @@ class Lc3DartAssembler {
 }
 
 class Lc3DartSymbols {
-  Map<String, int> labels = {};
+  Map<String, int> symbols = {};
   int origin = 0x3000;
   int memoryOffset = 0;
   int currentLine = 1;
@@ -324,31 +324,61 @@ class Lc3DartSymbols {
   final int maximumMemorySpace = 65023;
 
   void markSymbols(String path) {
+    var hasMarkedOrigin = false;
     File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
       (line) {
         line = removeCommentFromLine(line);
         if (line.isNotEmpty) {
-          processSymbolLine(line);
+          if (!hasMarkedOrigin) {
+            markOrigin(line);
+            hasMarkedOrigin = true;
+          } else {
+            routeLine(line);
+          }
           currentLine++;
+          memoryOffset++;
         }
       },
     );
   }
 
-  void processSymbolLine(String line) {
-    var firstWord = line.substring(0, line.indexOf(RegExp('[ \t]+')));
-    var isOpcode = OpCodes.toBinary(firstWord) != -1;
-    var isMacro = Macros.isMacro(firstWord);
-
-    if (firstWord.toUpperCase() == Macros.ORIG) {
-      markOrigin(line);
-    } else if (!(isOpcode || isMacro)) {
-      markSymbol(line);
+  void routeLine(String line) {
+    line = line.replaceAll(RegExp('[ \t]+'), ' ');
+    var spaceCount = ' '.allMatches(line).length;
+    if (spaceCount == 0) {
+      var isOpcode = OpCodes.toBinary(line) != -1;
+      var isMacro = Macros.isMacro(line);
+      if (isOpcode || isMacro) {
+        return;
+      } else {
+        markStandaloneSymbol(line);
+      }
+    } else if (spaceCount > 1) {
+      var firstWordIndex = line.indexOf(' ');
+      var secondWordIndex = line.indexOf(' ', firstWordIndex + 1);
+      var firstWord = line.substring(0, firstWordIndex);
+      var secondWord = line.substring(firstWordIndex + 1, secondWordIndex);
+      var isOpcode = OpCodes.toBinary(firstWord) != -1;
+      var isMacro = Macros.isMacro(firstWord);
+      if (isOpcode || isMacro) {
+        return;
+      } else if (secondWord.toUpperCase() == Macros.STRINGZ) {
+        markStringzSymbol(firstWord, line.substring(secondWordIndex + 1));
+      } else if (secondWord.toUpperCase() == Macros.BLKW) {
+        markBlkwSymbol(firstWord, line.substring(secondWordIndex + 1));
+      } else if (secondWord.toUpperCase() == Macros.FILL) {
+        markStandaloneSymbol(firstWord);
+      }
     }
   }
 
   void markOrigin(String line) {
     var commands = line.split(RegExp('[ \t]+'));
+    if (commands.length < 2 || commands[0] != Macros.ORIG) {
+      throw Exception(
+        'First line of program must be a .ORIG indicating the memory origin.',
+      );
+    }
     var originParsed = parseInt(commands[1]);
     if (originParsed == null) {
       throw Exception(
@@ -364,51 +394,66 @@ class Lc3DartSymbols {
     }
   }
 
-  void markSymbol(String line) {
-    var spaceIndicies = line.allMatches(' ');
-    print('test');
-
-    // if (labels.containsKey(commands[0])) {
-    //   throw Exception(
-    //     'Illegal redefinition of label ${commands[0]} on line $currentLine.',
-    //   );
-    // } else {
-    //   labels[commands[0]] = origin + memoryOffset;
-    //   processStringzInSymbol(commands);
-    //   processBlkwInSymbol(commands);
-    // }
-  }
-
-  void processSingleLocationSymbol() {}
-
-  void processStringzSymbol(List<String> commands) {
-    // TODO:Test this function.
-    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
-      // Set memory offset to length of string plus one location for null
-      // terminator.
-      memoryOffset += commands[1].length + 1;
+  void markStandaloneSymbol(String symbol) {
+    if (symbols.containsKey(symbol)) {
+      throw Exception(
+        'Illegal redefinition of symbol $symbol on line $currentLine.',
+      );
+    } else {
+      symbols[symbol] = origin + memoryOffset;
     }
   }
 
-  void processBlkwSymbol(List<String> commands) {
-    // TODO:Test this function.
-    if (commands.length > 2 && commands[0].toUpperCase() == Macros.STRINGZ) {
-      var blockSize = parseInt(commands[1]);
-      if (blockSize == null) {
-        throw Exception(
-          'Failed to parse blocksize in .BLKW macro on line $currentLine.',
-        );
-      } else {
-        memoryOffset += blockSize;
-      }
+  void markStringzSymbol(String symbol, String remainingLine) {
+    var processedString = replaceEscapedQuotes(remainingLine);
+    if (processedString == null) {
+      throw Exception(
+        'Failed to parse string literal on line $currentLine.',
+      );
+    }
+    memoryOffset += processedString.length + 1;
+  }
+
+  void markBlkwSymbol(String symbol, String remainingLine) {
+    var spaceToAllocate = parseInt(remainingLine);
+    if (spaceToAllocate == null) {
+      throw Exception(
+        'Failed to parse operand in .BLKW macro on line $currentLine',
+      );
+    }
+
+    memoryOffset += spaceToAllocate;
+  }
+}
+
+String? replaceEscapedQuotes(String line) {
+  var firstQuoteIndex = line.indexOf('"');
+  var nextQuoteIndex = firstQuoteIndex + 1;
+  var isQuoteEscaped = true;
+
+  while (isQuoteEscaped) {
+    nextQuoteIndex = line.indexOf('"', nextQuoteIndex);
+    if (nextQuoteIndex == -1) {
+      return null;
+    } else if (line[nextQuoteIndex - 1] == '\\') {
+      nextQuoteIndex++;
+    } else {
+      isQuoteEscaped = false;
     }
   }
+
+  var trimmedString = line
+      .substring(0, nextQuoteIndex)
+      .substring(firstQuoteIndex + 1)
+      .replaceAll('\\', '');
+
+  return trimmedString;
 }
 
 String removeCommentFromLine(String line) {
   var hasSemi = line.indexOf(';');
   if (hasSemi != -1) {
-    return line.substring(0, hasSemi);
+    return line.substring(0, hasSemi).trim();
   } else {
     return line;
   }
