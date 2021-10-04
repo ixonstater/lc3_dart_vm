@@ -7,6 +7,7 @@ void testAssembler() {
   testCommentRemoval();
   testParseInt();
   testProcessStringLiteral();
+  testMarkOrigin();
 }
 
 void main(List<String> args) {

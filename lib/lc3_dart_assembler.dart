@@ -441,7 +441,7 @@ class Lc3DartSymbols {
 
   void markOrigin(String line) {
     var commands = line.split(RegExp('[ \t]+'));
-    if (commands.length < 2 || commands[0] != Macros.ORIG) {
+    if (commands.length < 2 || commands[0].toUpperCase() != Macros.ORIG) {
       throw Exception(
         'First line of program must be a .ORIG indicating the memory origin.',
       );
