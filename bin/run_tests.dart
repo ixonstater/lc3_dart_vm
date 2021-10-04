@@ -6,7 +6,7 @@ void testAssembler() {
   testNot();
   testCommentRemoval();
   testParseInt();
-  testReplaceEscapedQuotes();
+  testProcessStringLiteral();
 }
 
 void main(List<String> args) {

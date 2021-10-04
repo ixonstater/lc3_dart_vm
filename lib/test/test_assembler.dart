@@ -74,18 +74,17 @@ void testNot() {
 
 void testCommentRemoval() {
   test('Remove standalone comment.', () {
-    var line = removeCommentFromLine(';A test comment; comment; comment');
+    var line = preprocessLine(';A test comment; comment; comment');
     expect(line, '');
   });
 
   test('Remove comment from code line.', () {
-    var line =
-        removeCommentFromLine('ADD R0 R2 30;A test comment; comment; comment');
+    var line = preprocessLine('ADD R0 R2 30;A test comment; comment; comment');
     expect(line, 'ADD R0 R2 30');
   });
 
   test('Remove comment with space from code line', () {
-    var line = removeCommentFromLine('ADD R0 R2 30      ;test comment');
+    var line = preprocessLine('ADD R0 R2 30      ;test comment');
     expect(line, 'ADD R0 R2 30');
   });
 }
@@ -117,18 +116,23 @@ void testParseInt() {
   });
 }
 
-void testReplaceEscapedQuotes() {
+void testProcessStringLiteral() {
   test('Parse basic string', () {
-    var value = replaceEscapedQuotes('"Hello world."');
+    var value = processStringLiteral('"Hello world."');
     expect(value, 'Hello world.');
   });
 
   test('Sucessfully parse string with escaped quotes.', () {
-    var value = replaceEscapedQuotes('"Hel\\"lo w\\"or\\"ld."');
+    var value = processStringLiteral('"Hel\\"lo w\\"or\\"ld."');
     expect(value, 'Hel"lo w"or"ld.');
   });
 
   test('Fail to parse non-terminated string.', () {
-    expect(replaceEscapedQuotes('"Hello world.'), null);
+    expect(processStringLiteral('"Hello world.'), null);
+  });
+
+  test('Change \\r and \\n and \\r\\n to escaped values.', () {
+    expect(processStringLiteral('"Hello \\r world \\n. \\r\\n"'),
+        'Hello \r world \n. \r\n');
   });
 }

@@ -24,7 +24,13 @@ class OpCodes {
   static const String ADD = 'ADD';
   static const String AND = 'AND';
   static const String NOT = 'NOT';
-  static const String BR = 'BR';
+  static const String BRN = 'BRN';
+  static const String BRP = 'BRP';
+  static const String BRZ = 'BRZ';
+  static const String BRNP = 'BRNP';
+  static const String BRNZ = 'BRNZ';
+  static const String BRPZ = 'BRPZ';
+  static const String BRNZP = 'BRNZP';
   static const String JMP = 'JMP';
   static const String JSR = 'JSR';
   static const String LD = 'LD';
@@ -64,7 +70,19 @@ class OpCodes {
         return OpCodes.ANDb;
       case OpCodes.NOT:
         return OpCodes.NOTb;
-      case OpCodes.BR:
+      case OpCodes.BRZ:
+        return OpCodes.BRb;
+      case OpCodes.BRN:
+        return OpCodes.BRb;
+      case OpCodes.BRP:
+        return OpCodes.BRb;
+      case OpCodes.BRNP:
+        return OpCodes.BRb;
+      case OpCodes.BRNZ:
+        return OpCodes.BRb;
+      case OpCodes.BRPZ:
+        return OpCodes.BRb;
+      case OpCodes.BRNZP:
         return OpCodes.BRb;
       case OpCodes.JMP:
         return OpCodes.JMPb;
@@ -148,6 +166,16 @@ class Traps {
   static const String IN = 'IN';
   static const String PUTSP = 'PUTSP';
   static const String HALT = 'HALT';
+
+  static bool isTrap(String str) {
+    str = str.toUpperCase();
+    return str == Traps.GETC ||
+        str == Traps.OUT ||
+        str == Traps.PUTS ||
+        str == Traps.IN ||
+        str == Traps.PUTSP ||
+        str == Traps.HALT;
+  }
 }
 
 class Lc3DartAssembler {
@@ -157,8 +185,10 @@ class Lc3DartAssembler {
   int memoryOffset = 0;
   Lc3DartSymbols symbols = Lc3DartSymbols();
 
-  void assemble(String path) {
-    symbols.markSymbols(path);
+  void assemble(String path) async {
+    await symbols.markSymbols(path);
+    await symbols.writeSymbolsFile();
+    return;
     processOpCodes(path);
     writeBinaryFile(path);
   }
@@ -169,7 +199,7 @@ class Lc3DartAssembler {
     currentLine = 1;
     File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
       (line) {
-        line = removeCommentFromLine(line);
+        line = preprocessLine(line);
         if (line.isNotEmpty) {
           commands = line.split(RegExp('[ \t]+'));
           routeOpCode();
@@ -193,7 +223,19 @@ class Lc3DartAssembler {
       case OpCodes.NOT:
         writeNot();
         break;
-      case OpCodes.BR:
+      case OpCodes.BRZ:
+        break;
+      case OpCodes.BRN:
+        break;
+      case OpCodes.BRP:
+        break;
+      case OpCodes.BRNP:
+        break;
+      case OpCodes.BRNZ:
+        break;
+      case OpCodes.BRPZ:
+        break;
+      case OpCodes.BRNZP:
         break;
       case OpCodes.JMP:
         break;
@@ -323,11 +365,34 @@ class Lc3DartSymbols {
   final int minimumMemorySpace = 12288;
   final int maximumMemorySpace = 65023;
 
-  void markSymbols(String path) {
+  Future<void> writeSymbolsFile() async {
+    var outFile = File('./program.sym').openWrite();
+    outFile.writeln('//Symbol table');
+    outFile.writeln('//     Symbol Name              Page Address');
+    outFile.writeln('//     -----------              ------------');
+    symbols.forEach((key, value) {
+      var symbolName = '//     ' + key;
+      var spaces = 26 - key.length > 0 ? 26 - key.length : 1;
+      var pageAddress = ''.padRight(spaces, ' ') +
+          value.toRadixString(16) +
+          ': ' +
+          (value - origin).toRadixString(10);
+
+      outFile.writeln(symbolName + pageAddress);
+    });
+    await outFile.done;
+    await outFile.close();
+  }
+
+  Future<void> markSymbols(String path) async {
     var hasMarkedOrigin = false;
-    File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
+    await File(path)
+        .openRead()
+        .map(utf8.decode)
+        .transform(LineSplitter())
+        .forEach(
       (line) {
-        line = removeCommentFromLine(line);
+        line = preprocessLine(line);
         if (line.isNotEmpty) {
           if (!hasMarkedOrigin) {
             markOrigin(line);
@@ -348,7 +413,8 @@ class Lc3DartSymbols {
     if (spaceCount == 0) {
       var isOpcode = OpCodes.toBinary(line) != -1;
       var isMacro = Macros.isMacro(line);
-      if (isOpcode || isMacro) {
+      var isTrap = Traps.isTrap(line);
+      if (isOpcode || isMacro || isTrap) {
         return;
       } else {
         markStandaloneSymbol(line);
@@ -360,7 +426,8 @@ class Lc3DartSymbols {
       var secondWord = line.substring(firstWordIndex + 1, secondWordIndex);
       var isOpcode = OpCodes.toBinary(firstWord) != -1;
       var isMacro = Macros.isMacro(firstWord);
-      if (isOpcode || isMacro) {
+      var isTrap = Traps.isTrap(firstWord);
+      if (isOpcode || isMacro || isTrap) {
         return;
       } else if (secondWord.toUpperCase() == Macros.STRINGZ) {
         markStringzSymbol(firstWord, line.substring(secondWordIndex + 1));
@@ -405,12 +472,14 @@ class Lc3DartSymbols {
   }
 
   void markStringzSymbol(String symbol, String remainingLine) {
-    var processedString = replaceEscapedQuotes(remainingLine);
+    var processedString = processStringLiteral(remainingLine);
     if (processedString == null) {
       throw Exception(
         'Failed to parse string literal on line $currentLine.',
       );
     }
+
+    markStandaloneSymbol(symbol);
     memoryOffset += processedString.length + 1;
   }
 
@@ -422,40 +491,33 @@ class Lc3DartSymbols {
       );
     }
 
+    markStandaloneSymbol(symbol);
     memoryOffset += spaceToAllocate;
   }
 }
 
-String? replaceEscapedQuotes(String line) {
-  var firstQuoteIndex = line.indexOf('"');
-  var nextQuoteIndex = firstQuoteIndex + 1;
-  var isQuoteEscaped = true;
-
-  while (isQuoteEscaped) {
-    nextQuoteIndex = line.indexOf('"', nextQuoteIndex);
-    if (nextQuoteIndex == -1) {
-      return null;
-    } else if (line[nextQuoteIndex - 1] == '\\') {
-      nextQuoteIndex++;
-    } else {
-      isQuoteEscaped = false;
-    }
+String? processStringLiteral(String line) {
+  if (!(line[0] == '"' && line[line.length - 1] == '"')) {
+    return null;
+  } else {
+    line = line.substring(1, line.length - 1);
   }
 
   var trimmedString = line
-      .substring(0, nextQuoteIndex)
-      .substring(firstQuoteIndex + 1)
-      .replaceAll('\\', '');
+      .replaceAll('\\"', '"')
+      .replaceAll('\\r\\n', '\r\n')
+      .replaceAll('\\r', '\r')
+      .replaceAll('\\n', '\n');
 
   return trimmedString;
 }
 
-String removeCommentFromLine(String line) {
+String preprocessLine(String line) {
   var hasSemi = line.indexOf(';');
   if (hasSemi != -1) {
     return line.substring(0, hasSemi).trim();
   } else {
-    return line;
+    return line.trim();
   }
 }
 
