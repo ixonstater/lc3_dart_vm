@@ -169,3 +169,23 @@ void testMarkOrigin() {
     expect(() => obj.markOrigin('.ORIG 0x2fff'), throwsException);
   });
 }
+
+void testMarkStringzSymbol() {
+  test('Correctly set memory offset for string.', () {
+    var obj = Lc3DartSymbols();
+    obj.markStringzSymbol('TEST_SYMBOL', '"A test line."');
+    expect(obj.symbols.containsKey('TEST_SYMBOL'), true);
+    expect(obj.symbols['TEST_SYMBOL'], obj.minimumMemorySpace);
+    expect(obj.memoryOffset, 13);
+  });
+}
+
+void testMarkBlkwSymbol() {
+  test('Correctly set memory offset for blkw.', () {
+    var obj = Lc3DartSymbols();
+    obj.markBlkwSymbol('TEST_SYMBOL', '20');
+    expect(obj.symbols.containsKey('TEST_SYMBOL'), true);
+    expect(obj.symbols['TEST_SYMBOL'], obj.minimumMemorySpace);
+    expect(obj.memoryOffset, 20);
+  });
+}

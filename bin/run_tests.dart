@@ -8,6 +8,8 @@ void testAssembler() {
   testParseInt();
   testProcessStringLiteral();
   testMarkOrigin();
+  testMarkStringzSymbol();
+  testMarkBlkwSymbol();
 }
 
 void main(List<String> args) {
