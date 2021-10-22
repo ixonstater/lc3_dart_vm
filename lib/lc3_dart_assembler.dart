@@ -183,7 +183,7 @@ class Lc3DartAssembler {
   List<int> bCommands = [];
   List<String> commands = [];
   int currentLine = 1;
-  int memoryOffset = 0;
+  int programCounter = 0;
   Lc3DartSymbols symbols = Lc3DartSymbols();
 
   void assemble(String path) async {
@@ -197,7 +197,7 @@ class Lc3DartAssembler {
 
   Future<void> processOpCodes(String path) async {
     currentLine = 1;
-    memoryOffset = symbols.origin;
+    programCounter = symbols.origin;
     await File(path)
         .openRead()
         .map(utf8.decode)
@@ -209,7 +209,7 @@ class Lc3DartAssembler {
           line = line.replaceAll(',', '');
           commands = line.split(RegExp('[ \t]+'));
           routeLineStart(line);
-          memoryOffset++;
+          programCounter++;
         }
         currentLine++;
       },
@@ -287,6 +287,9 @@ class Lc3DartAssembler {
       case Macros.END:
         break;
       case Macros.ORIG:
+        // Decrement here to avoid counting macro in program
+        // counter.
+        programCounter--;
         break;
       case Macros.STRINGZ:
         break;
@@ -300,6 +303,9 @@ class Lc3DartAssembler {
             'Invalid instruction ${commands[0]} at line $currentLine.',
           );
         } else {
+          // Decrement here to avoid counting symbol as part
+          // of overall program counter offset.
+          programCounter--;
           // TODO: Implement symbol writing.
         }
     }
@@ -377,10 +383,10 @@ class Lc3DartAssembler {
     int finalCommand;
     if (symbols.hasSymbol(commands[1])) {
       var label = symbols.symbols[commands[1]]!;
-      var pcoffset = label - memoryOffset;
+      var pcoffset = label - programCounter;
       if (pcoffset > 2047) {
         throw Exception(
-          'Cannot jump to label ${commands[1]} having memory offset $label from current memory offset at $memoryOffset, distance is greater than maximum 2047 representable by 11 bits.',
+          'Cannot jump to label ${commands[1]} having memory offset $label from current memory offset at $programCounter, distance is greater than maximum 2047 representable by 11 bits.',
         );
       }
       var fillerOne = 1 << 11;
