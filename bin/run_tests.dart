@@ -6,6 +6,7 @@ void testAssembler() {
   testAnd();
   testNot();
   testRetAndJmp();
+  testJsrAndJsrr();
   // Tests for global functions
   testCommentRemoval();
   testParseInt();

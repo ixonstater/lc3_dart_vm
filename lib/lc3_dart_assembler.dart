@@ -384,7 +384,7 @@ class Lc3DartAssembler {
     if (symbols.hasSymbol(commands[1])) {
       var label = symbols.symbols[commands[1]]!;
       var pcoffset = label - programCounter;
-      if (pcoffset > 2047) {
+      if (pcoffset.abs() > 2047) {
         throw Exception(
           'Cannot jump to label ${commands[1]} having memory offset $label from current memory offset at $programCounter, distance is greater than maximum 2047 representable by 11 bits.',
         );
@@ -396,7 +396,6 @@ class Lc3DartAssembler {
       finalCommand = baseCommand | register;
     }
 
-    print(finalCommand.toRadixString(2));
     bCommands.add(finalCommand);
   }
 

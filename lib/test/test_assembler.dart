@@ -94,6 +94,39 @@ void testRetAndJmp() {
   });
 }
 
+void testJsrAndJsrr() {
+  var obj = Lc3DartAssembler();
+  obj.symbols.symbols.addAll({
+    'symbolOne': 10,
+    'symbolTwo': 15,
+    'symbolThree': 16,
+  });
+
+  test('Succesfully add JSR command.', () {
+    obj.bCommands = [];
+    obj.commands = ['JSR', 'symbolOne'];
+    obj.writeJsr();
+    expect(obj.bCommands[0], 18442);
+  });
+  test('Succesfully add JSRR command.', () {
+    obj.bCommands = [];
+    obj.commands = ['JSRr', 'r1'];
+    obj.writeJsr();
+    expect(obj.bCommands[0], 16448);
+  });
+  test('Fail on wrong number of args.', () {
+    obj.bCommands = [];
+    obj.commands = ['JSRr', 'r1', 'r4'];
+    expect(() => obj.writeJsr(), throwsException);
+  });
+  test('Fail on pcoffset too large.', () {
+    obj.bCommands = [];
+    obj.commands = ['JSRr', 'symbolOne'];
+    obj.programCounter = 2058;
+    expect(() => obj.writeJsr(), throwsException);
+  });
+}
+
 void testCommentRemoval() {
   test('Remove standalone comment.', () {
     var line = preprocessLine(';A test comment; comment; comment');
