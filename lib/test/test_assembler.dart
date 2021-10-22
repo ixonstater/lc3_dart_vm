@@ -72,6 +72,28 @@ void testNot() {
   });
 }
 
+void testRetAndJmp() {
+  test('Successfully JMP.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['JMP', 'R3'];
+    obj.writeJmpAndRet();
+    expect(obj.bCommands[0], 49344);
+  });
+
+  test('Successfully RET.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['RET'];
+    obj.writeJmpAndRet();
+    expect(obj.bCommands[0], 49600);
+  });
+
+  test('Fail JMP with bad register.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['jMp', 'R11'];
+    expect(() => obj.writeJmpAndRet(), throwsException);
+  });
+}
+
 void testCommentRemoval() {
   test('Remove standalone comment.', () {
     var line = preprocessLine(';A test comment; comment; comment');

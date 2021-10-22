@@ -382,7 +382,6 @@ class Lc3DartAssembler {
     }
 
     var finalCommand = baseCommand | register;
-    print(finalCommand.toRadixString(2));
     bCommands.add(finalCommand);
   }
 
