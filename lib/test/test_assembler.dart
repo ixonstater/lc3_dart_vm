@@ -196,7 +196,7 @@ void testMarkStringzSymbol() {
     obj.markStringzSymbol('TEST_SYMBOL', '"A test line."');
     expect(obj.symbols.containsKey('TEST_SYMBOL'), true);
     expect(obj.symbols['TEST_SYMBOL'], obj.minimumMemorySpace);
-    expect(obj.memoryOffset, 13);
+    expect(obj.memoryOffset, 12);
   });
 }
 
@@ -206,6 +206,6 @@ void testMarkBlkwSymbol() {
     obj.markBlkwSymbol('TEST_SYMBOL', '20');
     expect(obj.symbols.containsKey('TEST_SYMBOL'), true);
     expect(obj.symbols['TEST_SYMBOL'], obj.minimumMemorySpace);
-    expect(obj.memoryOffset, 20);
+    expect(obj.memoryOffset, 19);
   });
 }
