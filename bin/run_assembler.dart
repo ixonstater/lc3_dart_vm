@@ -2,5 +2,5 @@ import 'package:lc3_dart_vm/lc3_dart_assembler.dart';
 
 void main(List<String> args) {
   var obj = Lc3DartAssembler();
-  obj.assemble('./test.asm');
+  obj.assemble('./temp/test.asm');
 }

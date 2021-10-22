@@ -33,6 +33,7 @@ class OpCodes {
   static const String BRNZP = 'BRNZP';
   static const String JMP = 'JMP';
   static const String JSR = 'JSR';
+  static const String JSRR = 'JSRR';
   static const String LD = 'LD';
   static const String LDI = 'LDI';
   static const String LDR = 'LDR';
@@ -87,6 +88,8 @@ class OpCodes {
         return OpCodes.JMPb;
       case OpCodes.JSR:
         return OpCodes.JSRb;
+      case OpCodes.JSRR:
+        return OpCodes.JSRb;
       case OpCodes.LD:
         return OpCodes.LDb;
       case OpCodes.LDI:
@@ -133,9 +136,9 @@ class Registers {
   static const int R7b = 7;
   static const int ERROR = -1;
 
-  static int toBinary(String register, int lShift) {
-    register = register.toUpperCase();
-    switch (register) {
+  static int toBinary(String register, int lShift, int lineCount) {
+    var switchReg = register.toUpperCase();
+    switch (switchReg) {
       case Registers.R0:
         return Registers.R0b << lShift;
       case Registers.R1:
@@ -153,7 +156,8 @@ class Registers {
       case Registers.R7:
         return Registers.R7b << lShift;
       default:
-        return Registers.ERROR;
+        throw Exception(
+            'Invalid register or undefined symbol $register found on line $lineCount.');
     }
   }
 }
@@ -184,15 +188,16 @@ class Lc3DartAssembler {
 
   void assemble(String path) async {
     await symbols.markSymbols(path);
-    symbols.writeSymbolsFile();
     await processOpCodes(path);
     await writeBinaryFile(path);
+    await symbols.writeSymbolsFile();
   }
 
   Future<void> writeBinaryFile(String path) async {}
 
   Future<void> processOpCodes(String path) async {
     currentLine = 1;
+    memoryOffset = symbols.origin;
     await File(path)
         .openRead()
         .map(utf8.decode)
@@ -201,10 +206,12 @@ class Lc3DartAssembler {
       (line) {
         line = preprocessLine(line);
         if (line.isNotEmpty) {
+          line = line.replaceAll(',', '');
           commands = line.split(RegExp('[ \t]+'));
           routeLineStart(line);
-          currentLine++;
+          memoryOffset++;
         }
+        currentLine++;
       },
     );
   }
@@ -230,6 +237,10 @@ class Lc3DartAssembler {
         writeJmpAndRet();
         break;
       case OpCodes.JSR:
+        writeJsr();
+        break;
+      case OpCodes.JSRR:
+        writeJsr();
         break;
       case OpCodes.LD:
         break;
@@ -284,7 +295,7 @@ class Lc3DartAssembler {
       case Macros.FILL:
         break;
       default:
-        if (!symbols.symbols.containsKey(commands[0])) {
+        if (!symbols.hasSymbol(commands[0])) {
           throw Exception(
             'Invalid instruction ${commands[0]} at line $currentLine.',
           );
@@ -301,18 +312,8 @@ class Lc3DartAssembler {
       );
     }
     var baseCommand = OpCodes.toBinary(commands[0]);
-    var destination = Registers.toBinary(commands[1], 9);
-    if (destination == Registers.ERROR) {
-      throw Exception(
-        'Invalid destination register ${commands[1]} on line $currentLine.',
-      );
-    }
-    var sourceOne = Registers.toBinary(commands[2], 6);
-    if (sourceOne == Registers.ERROR) {
-      throw Exception(
-        'Invalid source one register ${commands[2]} on line $currentLine.',
-      );
-    }
+    var destination = Registers.toBinary(commands[1], 9, currentLine);
+    var sourceOne = Registers.toBinary(commands[2], 6, currentLine);
 
     var parsedImmediate = int.tryParse(commands[3]);
     var sourceTwo;
@@ -329,12 +330,7 @@ class Lc3DartAssembler {
       }
     } else {
       immediateFlag = 0;
-      sourceTwo = Registers.toBinary(commands[3], 0);
-      if (sourceTwo == Registers.ERROR) {
-        throw Exception(
-          'Invalid source two register ${commands[3]} on line $currentLine.',
-        );
-      }
+      sourceTwo = Registers.toBinary(commands[3], 0, currentLine);
     }
 
     var finalCommand =
@@ -348,19 +344,9 @@ class Lc3DartAssembler {
         '${commands[0]} opcode requires exactly three arguments at line: $currentLine.',
       );
     }
-    var baseCommand = OpCodes.toBinary(commands[0]);
-    var destination = Registers.toBinary(commands[1], 9);
-    if (destination == Registers.ERROR) {
-      throw Exception(
-        'Invalid destination register ${commands[1]} on line $currentLine.',
-      );
-    }
-    var source = Registers.toBinary(commands[2], 6);
-    if (source == Registers.ERROR) {
-      throw Exception(
-        'Invalid source register ${commands[2]} on line $currentLine.',
-      );
-    }
+    var baseCommand = OpCodes.NOTb;
+    var destination = Registers.toBinary(commands[1], 9, currentLine);
+    var source = Registers.toBinary(commands[2], 6, currentLine);
     var paddedOnes = 63;
 
     var finalCommand = baseCommand | destination | source | paddedOnes;
@@ -371,17 +357,40 @@ class Lc3DartAssembler {
     var baseCommand = OpCodes.JMPb;
     int register;
     if (commands.length <= 1) {
-      register = Registers.toBinary(Registers.R7, 6);
+      register = Registers.toBinary(Registers.R7, 6, currentLine);
     } else {
-      register = Registers.toBinary(commands[1], 6);
-      if (register == -1) {
-        throw Exception(
-          'Invalid source register ${commands[1]} on line $currentLine.',
-        );
-      }
+      register = Registers.toBinary(commands[1], 6, currentLine);
     }
 
     var finalCommand = baseCommand | register;
+    bCommands.add(finalCommand);
+  }
+
+  void writeJsr() {
+    if (commands.length != 2) {
+      throw Exception(
+        'JSR and JSRR require exactly one argument on line $currentLine.',
+      );
+    }
+
+    var baseCommand = OpCodes.JSRb;
+    int finalCommand;
+    if (symbols.hasSymbol(commands[1])) {
+      var label = symbols.symbols[commands[1]]!;
+      var pcoffset = label - memoryOffset;
+      if (pcoffset > 2047) {
+        throw Exception(
+          'Cannot jump to label ${commands[1]} having memory offset $label from current memory offset at $memoryOffset, distance is greater than maximum 2047 representable by 11 bits.',
+        );
+      }
+      var fillerOne = 1 << 11;
+      finalCommand = baseCommand | fillerOne | pcoffset;
+    } else {
+      var register = Registers.toBinary(commands[1], 6, currentLine);
+      finalCommand = baseCommand | register;
+    }
+
+    print(finalCommand.toRadixString(2));
     bCommands.add(finalCommand);
   }
 
@@ -403,7 +412,7 @@ class Lc3DartSymbols {
   final int minimumMemorySpace = 12288;
   final int maximumMemorySpace = 65023;
 
-  void writeSymbolsFile() {
+  Future<void> writeSymbolsFile() async {
     var outFile = File('./program.sym').openWrite();
     outFile.writeln('//Symbol table');
     outFile.writeln('//     Symbol Name              Page Address');
@@ -418,8 +427,8 @@ class Lc3DartSymbols {
 
       outFile.writeln(symbolName + pageAddress);
     });
-    outFile.done;
-    outFile.close();
+    await outFile.done;
+    await outFile.close();
   }
 
   Future<void> markSymbols(String path) async {
@@ -438,9 +447,9 @@ class Lc3DartSymbols {
           } else {
             routeLine(line);
           }
-          currentLine++;
           memoryOffset++;
         }
+        currentLine++;
       },
     );
   }
@@ -472,6 +481,10 @@ class Lc3DartSymbols {
         markBlkwSymbol(firstWord, line.substring(secondWordIndex + 1));
       } else if (secondWord.toUpperCase() == Macros.FILL) {
         markStandaloneSymbol(firstWord);
+        // Generally the memory offset should not be incremented
+        // for a label, however blkw, stringz and fill need incrementing.
+        // This is handled here instead of in another function for fill.
+        memoryOffset++;
       }
     }
   }
@@ -483,28 +496,28 @@ class Lc3DartSymbols {
         'First line of program must be a .ORIG indicating the memory origin.',
       );
     }
-    var originParsed = parseInt(commands[1]);
-    if (originParsed == null) {
-      throw Exception(
-        'Unable to parse operand of .ORIG macro on line $currentLine.',
-      );
-    } else if (originParsed < minimumMemorySpace ||
+    var originParsed = parseInt(commands[1], currentLine);
+    if (originParsed < minimumMemorySpace ||
         originParsed > maximumMemorySpace) {
       throw Exception(
         'LC3 .ORIG must be between 0X3000 and 0XFDFF on line $currentLine.',
       );
     } else {
       origin = originParsed;
+      // The origin does not count as a memory location.
+      memoryOffset--;
     }
   }
 
   void markStandaloneSymbol(String symbol) {
+    symbol = symbol.replaceAll(':', '');
     if (symbols.containsKey(symbol)) {
       throw Exception(
         'Illegal redefinition of symbol $symbol on line $currentLine.',
       );
     } else {
       symbols[symbol] = origin + memoryOffset;
+      memoryOffset--;
     }
   }
 
@@ -521,15 +534,15 @@ class Lc3DartSymbols {
   }
 
   void markBlkwSymbol(String symbol, String remainingLine) {
-    var spaceToAllocate = parseInt(remainingLine);
-    if (spaceToAllocate == null) {
-      throw Exception(
-        'Failed to parse operand in .BLKW macro on line $currentLine',
-      );
-    }
+    var spaceToAllocate = parseInt(remainingLine, currentLine);
 
     markStandaloneSymbol(symbol);
     memoryOffset += spaceToAllocate;
+  }
+
+  bool hasSymbol(String symbol) {
+    symbol = symbol.replaceAll(':', '');
+    return symbols.containsKey(symbol);
   }
 }
 
@@ -558,13 +571,20 @@ String preprocessLine(String line) {
   }
 }
 
-int? parseInt(String num) {
+int parseInt(String num, int currentLine) {
   num = num.toUpperCase();
+  int? returnVal;
   if (num.contains('0X') || num.contains('X')) {
     num = num.replaceFirst('0X', '');
     num = num.replaceFirst('X', '');
-    return int.tryParse(num, radix: 16);
+    returnVal = int.tryParse(num, radix: 16);
   } else {
-    return int.tryParse(num, radix: 10);
+    returnVal = int.tryParse(num, radix: 10);
   }
+
+  if (returnVal == null) {
+    throw Exception('Unparseable integer $num found on line $currentLine.');
+  }
+
+  return returnVal;
 }

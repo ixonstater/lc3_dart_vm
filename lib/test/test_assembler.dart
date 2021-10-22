@@ -113,28 +113,26 @@ void testCommentRemoval() {
 
 void testParseInt() {
   test('Test parsing base 10 integer.', () {
-    var parsed = parseInt('100');
+    var parsed = parseInt('100', 0);
     expect(parsed, 100);
   });
 
   test('Fail parsing malformed base 10 integer.', () {
-    var parsed = parseInt('10f0');
-    expect(parsed, null);
+    expect(() => parseInt('10f0', 0), throwsException);
   });
 
   test('Test parsing base 16 integer with 0x marker.', () {
-    var parsed = parseInt('0x100');
+    var parsed = parseInt('0x100', 0);
     expect(parsed, 256);
   });
 
   test('Test parsing base 16 integer with x marker.', () {
-    var parsed = parseInt('x101');
+    var parsed = parseInt('x101', 0);
     expect(parsed, 257);
   });
 
   test('Fail parsing malformed base 16 integer.', () {
-    var parsed = parseInt('0x100cvw');
-    expect(parsed, null);
+    expect(() => parseInt('0x100cvw', 0), throwsException);
   });
 }
 
