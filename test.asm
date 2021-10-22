@@ -27,7 +27,7 @@ MAINLOOPEXIT
 QUIT_NEG .FILL XFF8F
 
 ; Prompts for main loop
-BASIC_PROG_INFORMATION .STRINGZ	"T"
+BASIC_PROG_INFORMATION .STRINGZ	"T        df"
 CYCLIC_PROMPT .STRINGZ "Tet\n"
 
 ; This subroutine reads the users input into five memory spaces before returning.

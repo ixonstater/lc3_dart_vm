@@ -188,16 +188,19 @@ class Lc3DartAssembler {
   void assemble(String path) async {
     await symbols.markSymbols(path);
     await symbols.writeSymbolsFile();
-    return;
-    processOpCodes(path);
-    writeBinaryFile(path);
+    await processOpCodes(path);
+    await writeBinaryFile(path);
   }
 
-  void writeBinaryFile(String path) {}
+  Future<void> writeBinaryFile(String path) async {}
 
-  void processOpCodes(String path) {
+  Future<void> processOpCodes(String path) async {
     currentLine = 1;
-    File(path).openRead().map(utf8.decode).transform(LineSplitter()).forEach(
+    await File(path)
+        .openRead()
+        .map(utf8.decode)
+        .transform(LineSplitter())
+        .forEach(
       (line) {
         line = preprocessLine(line);
         if (line.isNotEmpty) {
@@ -223,20 +226,6 @@ class Lc3DartAssembler {
       case OpCodes.NOT:
         writeNot();
         break;
-      case OpCodes.BRZ:
-        break;
-      case OpCodes.BRN:
-        break;
-      case OpCodes.BRP:
-        break;
-      case OpCodes.BRNP:
-        break;
-      case OpCodes.BRNZ:
-        break;
-      case OpCodes.BRPZ:
-        break;
-      case OpCodes.BRNZP:
-        break;
       case OpCodes.JMP:
         break;
       case OpCodes.JSR:
@@ -258,6 +247,20 @@ class Lc3DartAssembler {
       case OpCodes.STI:
         break;
       case OpCodes.STR:
+        break;
+      case OpCodes.BRZ:
+        break;
+      case OpCodes.BRN:
+        break;
+      case OpCodes.BRP:
+        break;
+      case OpCodes.BRNP:
+        break;
+      case OpCodes.BRNZ:
+        break;
+      case OpCodes.BRPZ:
+        break;
+      case OpCodes.BRNZP:
         break;
       case OpCodes.TRAP:
         break;
@@ -347,7 +350,7 @@ class Lc3DartAssembler {
     bCommands.add(finalCommand);
   }
 
-  void writeBr() {
+  void writeBr(bool n, bool z, bool p) {
     if (commands.length != 3) {
       throw Exception(
         '${commands[0]} opcode requires exactly three arguments at line: $currentLine.',
@@ -408,8 +411,7 @@ class Lc3DartSymbols {
   }
 
   void routeLine(String line) {
-    line = line.replaceAll(RegExp('[ \t]+'), ' ');
-    var spaceCount = ' '.allMatches(line).length;
+    var spaceCount = RegExp('[ \t]+').allMatches(line).length;
     if (spaceCount == 0) {
       var isOpcode = OpCodes.toBinary(line) != -1;
       var isMacro = Macros.isMacro(line);
@@ -420,8 +422,8 @@ class Lc3DartSymbols {
         markStandaloneSymbol(line);
       }
     } else if (spaceCount > 1) {
-      var firstWordIndex = line.indexOf(' ');
-      var secondWordIndex = line.indexOf(' ', firstWordIndex + 1);
+      var firstWordIndex = line.indexOf(RegExp('[ \t]+'));
+      var secondWordIndex = line.indexOf(RegExp('[ \t]+'), firstWordIndex + 1);
       var firstWord = line.substring(0, firstWordIndex);
       var secondWord = line.substring(firstWordIndex + 1, secondWordIndex);
       var isOpcode = OpCodes.toBinary(firstWord) != -1;
