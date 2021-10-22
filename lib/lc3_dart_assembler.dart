@@ -54,7 +54,6 @@ class OpCodes {
   static final int LDIb = 10 << 12;
   static final int LDRb = 6 << 12;
   static final int LEAb = 15 << 12;
-  static final int RETb = 12 << 12;
   static final int RTIb = 8 << 12;
   static final int STb = 3 << 12;
   static final int STIb = 11 << 12;
@@ -97,7 +96,7 @@ class OpCodes {
       case OpCodes.LEA:
         return OpCodes.LEAb;
       case OpCodes.RET:
-        return OpCodes.RETb;
+        return OpCodes.JMPb;
       case OpCodes.RTI:
         return OpCodes.RTIb;
       case OpCodes.ST:
@@ -164,7 +163,6 @@ class Traps {
   static const String OUT = 'OUT';
   static const String PUTS = 'PUTS';
   static const String IN = 'IN';
-  static const String PUTSP = 'PUTSP';
   static const String HALT = 'HALT';
 
   static bool isTrap(String str) {
@@ -173,7 +171,6 @@ class Traps {
         str == Traps.OUT ||
         str == Traps.PUTS ||
         str == Traps.IN ||
-        str == Traps.PUTSP ||
         str == Traps.HALT;
   }
 }
@@ -187,7 +184,7 @@ class Lc3DartAssembler {
 
   void assemble(String path) async {
     await symbols.markSymbols(path);
-    await symbols.writeSymbolsFile();
+    symbols.writeSymbolsFile();
     await processOpCodes(path);
     await writeBinaryFile(path);
   }
@@ -205,14 +202,14 @@ class Lc3DartAssembler {
         line = preprocessLine(line);
         if (line.isNotEmpty) {
           commands = line.split(RegExp('[ \t]+'));
-          routeOpCode();
+          routeLineStart(line);
           currentLine++;
         }
       },
     );
   }
 
-  void routeOpCode() {
+  void routeLineStart(String line) {
     if (commands.isEmpty) {
       return;
     }
@@ -227,6 +224,10 @@ class Lc3DartAssembler {
         writeNot();
         break;
       case OpCodes.JMP:
+        writeJmpAndRet();
+        break;
+      case OpCodes.RET:
+        writeJmpAndRet();
         break;
       case OpCodes.JSR:
         break;
@@ -237,8 +238,6 @@ class Lc3DartAssembler {
       case OpCodes.LDR:
         break;
       case OpCodes.LEA:
-        break;
-      case OpCodes.RET:
         break;
       case OpCodes.RTI:
         break;
@@ -264,16 +263,34 @@ class Lc3DartAssembler {
         break;
       case OpCodes.TRAP:
         break;
+      case Traps.GETC:
+        break;
+      case Traps.HALT:
+        break;
+      case Traps.IN:
+        break;
+      case Traps.OUT:
+        break;
+      case Traps.PUTS:
+        break;
       case Macros.END:
         break;
       case Macros.ORIG:
         break;
       case Macros.STRINGZ:
         break;
+      case Macros.BLKW:
+        break;
+      case Macros.FILL:
+        break;
       default:
-        throw Exception(
-          'Invalid instruction ${commands[0]} at line $currentLine.',
-        );
+        if (!symbols.symbols.containsKey(commands[0])) {
+          throw Exception(
+            'Invalid instruction ${commands[0]} at line $currentLine.',
+          );
+        } else {
+          // TODO: Implement symbol writing.
+        }
     }
   }
 
@@ -350,6 +367,25 @@ class Lc3DartAssembler {
     bCommands.add(finalCommand);
   }
 
+  void writeJmpAndRet() {
+    var baseCommand = OpCodes.JMPb;
+    int register;
+    if (commands.length <= 1) {
+      register = Registers.toBinary(Registers.R7, 6);
+    } else {
+      register = Registers.toBinary(commands[1], 6);
+      if (register == -1) {
+        throw Exception(
+          'Invalid source register ${commands[1]} on line $currentLine.',
+        );
+      }
+    }
+
+    var finalCommand = baseCommand | register;
+    print(finalCommand.toRadixString(2));
+    bCommands.add(finalCommand);
+  }
+
   void writeBr(bool n, bool z, bool p) {
     if (commands.length != 3) {
       throw Exception(
@@ -368,7 +404,7 @@ class Lc3DartSymbols {
   final int minimumMemorySpace = 12288;
   final int maximumMemorySpace = 65023;
 
-  Future<void> writeSymbolsFile() async {
+  void writeSymbolsFile() {
     var outFile = File('./program.sym').openWrite();
     outFile.writeln('//Symbol table');
     outFile.writeln('//     Symbol Name              Page Address');
@@ -383,8 +419,8 @@ class Lc3DartSymbols {
 
       outFile.writeln(symbolName + pageAddress);
     });
-    await outFile.done;
-    await outFile.close();
+    outFile.done;
+    outFile.close();
   }
 
   Future<void> markSymbols(String path) async {
