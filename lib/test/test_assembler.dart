@@ -127,6 +127,67 @@ void testJsrAndJsrr() {
   });
 }
 
+void testLdLdiAndLea() {
+  var obj = Lc3DartAssembler();
+  obj.symbols.symbols.addAll({
+    'symbolOne': 10,
+    'symbolTwo': 15,
+    'symbolThree': 16,
+  });
+
+  test('Succesfully write LD', () {
+    obj.bCommands = [];
+    obj.commands = ['LD', 'r1', 'symbolOne'];
+    obj.writeLdLdiAndLea(OpCodes.LDb);
+    expect(obj.bCommands[0], 8714);
+  });
+
+  test('Succesfully write LEA', () {
+    obj.bCommands = [];
+    obj.commands = ['LEA', 'r1', 'symbolOne'];
+    obj.writeLdLdiAndLea(OpCodes.LEAb);
+    expect(obj.bCommands[0], 57866);
+  });
+
+  test('Succesfully write LDI', () {
+    obj.bCommands = [];
+    obj.commands = ['LDI', 'r1', 'symbolOne'];
+    obj.writeLdLdiAndLea(OpCodes.LDIb);
+    expect(obj.bCommands[0], 41482);
+  });
+}
+
+void testLabelToPcoffset() {
+  var obj = Lc3DartAssembler();
+  obj.symbols.symbols.addAll({
+    'symbolOne': 10,
+    'symbolTwo': 15,
+    'symbolThree': 0,
+  });
+
+  test('Successfully calculate pcoffset', () {
+    var offset = obj.labelToPcoffset('symbolTwo', 11);
+    expect(offset, 15);
+    offset = obj.labelToPcoffset('symbolThree', 11);
+    expect(offset, 0);
+  });
+
+  test('Successfully calculate negative offset.', () {
+    obj.programCounter = 15;
+    var offset = obj.labelToPcoffset('symbolOne', 9);
+    expect(offset, 507);
+  });
+
+  test('Fail with missing symbol.', () {
+    expect(() => obj.labelToPcoffset('badLabel', 9), throwsException);
+  });
+
+  test('Fail with offset too large.', () {
+    obj.programCounter = 266;
+    expect(() => obj.labelToPcoffset('symbolOne', 9), throwsException);
+  });
+}
+
 void testCommentRemoval() {
   test('Remove standalone comment.', () {
     var line = preprocessLine(';A test comment; comment; comment');

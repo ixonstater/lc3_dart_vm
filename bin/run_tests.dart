@@ -7,6 +7,8 @@ void testAssembler() {
   testNot();
   testRetAndJmp();
   testJsrAndJsrr();
+  testLdLdiAndLea();
+  testLabelToPcoffset();
   // Tests for global functions
   testCommentRemoval();
   testParseInt();

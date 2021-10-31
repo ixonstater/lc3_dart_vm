@@ -54,7 +54,7 @@ class OpCodes {
   static final int LDb = 2 << 12;
   static final int LDIb = 10 << 12;
   static final int LDRb = 6 << 12;
-  static final int LEAb = 15 << 12;
+  static final int LEAb = 14 << 12;
   static final int RTIb = 8 << 12;
   static final int STb = 3 << 12;
   static final int STIb = 11 << 12;
@@ -243,12 +243,15 @@ class Lc3DartAssembler {
         writeJsr();
         break;
       case OpCodes.LD:
+        writeLdLdiAndLea(OpCodes.LDb);
         break;
       case OpCodes.LDI:
+        writeLdLdiAndLea(OpCodes.LDIb);
         break;
       case OpCodes.LDR:
         break;
       case OpCodes.LEA:
+        writeLdLdiAndLea(OpCodes.LEAb);
         break;
       case OpCodes.RTI:
         break;
@@ -382,13 +385,7 @@ class Lc3DartAssembler {
     var baseCommand = OpCodes.JSRb;
     int finalCommand;
     if (symbols.hasSymbol(commands[1])) {
-      var label = symbols.symbols[commands[1]]!;
-      var pcoffset = label - programCounter;
-      if (pcoffset.abs() > 2047) {
-        throw Exception(
-          'Cannot jump to label ${commands[1]} having memory offset $label from current memory offset at $programCounter, distance is greater than maximum 2047 representable by 11 bits.',
-        );
-      }
+      var pcoffset = labelToPcoffset(commands[1], 11);
       var fillerOne = 1 << 11;
       finalCommand = baseCommand | fillerOne | pcoffset;
     } else {
@@ -399,12 +396,48 @@ class Lc3DartAssembler {
     bCommands.add(finalCommand);
   }
 
+  void writeLdLdiAndLea(int baseCommand) {
+    if (commands.length != 3) {
+      throw Exception(
+        'LD, LDI and LEA require exactly two arguments on line $currentLine.',
+      );
+    }
+
+    var register = Registers.toBinary(commands[1], 9, currentLine);
+    var pcoffset = labelToPcoffset(commands[2], 9);
+    var finalCommand = baseCommand | register | pcoffset;
+    bCommands.add(finalCommand);
+  }
+
   void writeBr(bool n, bool z, bool p) {
     if (commands.length != 3) {
       throw Exception(
         '${commands[0]} opcode requires exactly three arguments at line: $currentLine.',
       );
     }
+  }
+
+  int labelToPcoffset(String label, int offsetBitLength) {
+    if (!symbols.hasSymbol(label)) {
+      throw Exception(
+        'Cannot use undeclared label $label in instruction on line $currentLine.',
+      );
+    }
+
+    var labelLocation = symbols.symbols[label]!;
+    var pcoffset = labelLocation - programCounter;
+    // Maximum offset is the maximum twos complement
+    // integer representable by offsetBitLength bits
+    var maxOffset = (pow(2, offsetBitLength) / 2 - 1).toInt();
+    if (pcoffset.abs() > maxOffset) {
+      throw Exception(
+        'Cannot jump to label $label having memory offset $labelLocation from current memory offset at $programCounter, distance is greater than maximum $maxOffset representable by $offsetBitLength bits.',
+      );
+    }
+
+    var truncator = (pow(2, offsetBitLength) - 1) as int;
+    pcoffset = truncator & pcoffset;
+    return pcoffset;
   }
 }
 
@@ -592,4 +625,8 @@ int parseInt(String num, int currentLine) {
   }
 
   return returnVal;
+}
+
+void printBin(int num) {
+  print(BigInt.from(num).toUnsigned(64).toRadixString(2));
 }
