@@ -127,7 +127,7 @@ void testJsrAndJsrr() {
   });
 }
 
-void testLdLdiAndLea() {
+void testLdLdiLeaStSti() {
   var obj = Lc3DartAssembler();
   obj.symbols.symbols.addAll({
     'symbolOne': 10,
@@ -138,22 +138,36 @@ void testLdLdiAndLea() {
   test('Succesfully write LD', () {
     obj.bCommands = [];
     obj.commands = ['LD', 'r1', 'symbolOne'];
-    obj.writeLdLdiAndLea(OpCodes.LDb);
+    obj.writeLdLdiLeaStSti(OpCodes.LDb);
     expect(obj.bCommands[0], 8714);
   });
 
   test('Succesfully write LEA', () {
     obj.bCommands = [];
     obj.commands = ['LEA', 'r1', 'symbolOne'];
-    obj.writeLdLdiAndLea(OpCodes.LEAb);
+    obj.writeLdLdiLeaStSti(OpCodes.LEAb);
     expect(obj.bCommands[0], 57866);
   });
 
   test('Succesfully write LDI', () {
     obj.bCommands = [];
     obj.commands = ['LDI', 'r1', 'symbolOne'];
-    obj.writeLdLdiAndLea(OpCodes.LDIb);
+    obj.writeLdLdiLeaStSti(OpCodes.LDIb);
     expect(obj.bCommands[0], 41482);
+  });
+
+  test('Succesfully write ST', () {
+    obj.bCommands = [];
+    obj.commands = ['ST', 'r1', 'symbolOne'];
+    obj.writeLdLdiLeaStSti(OpCodes.STb);
+    expect(obj.bCommands[0], 12810);
+  });
+
+  test('Succesfully write STI', () {
+    obj.bCommands = [];
+    obj.commands = ['STI', 'r1', 'symbolOne'];
+    obj.writeLdLdiLeaStSti(OpCodes.STIb);
+    expect(obj.bCommands[0], 45578);
   });
 }
 

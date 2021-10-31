@@ -243,21 +243,23 @@ class Lc3DartAssembler {
         writeJsr();
         break;
       case OpCodes.LD:
-        writeLdLdiAndLea(OpCodes.LDb);
+        writeLdLdiLeaStSti(OpCodes.LDb);
         break;
       case OpCodes.LDI:
-        writeLdLdiAndLea(OpCodes.LDIb);
-        break;
-      case OpCodes.LDR:
+        writeLdLdiLeaStSti(OpCodes.LDIb);
         break;
       case OpCodes.LEA:
-        writeLdLdiAndLea(OpCodes.LEAb);
+        writeLdLdiLeaStSti(OpCodes.LEAb);
+        break;
+      case OpCodes.LDR:
         break;
       case OpCodes.RTI:
         break;
       case OpCodes.ST:
+        writeLdLdiLeaStSti(OpCodes.STb);
         break;
       case OpCodes.STI:
+        writeLdLdiLeaStSti(OpCodes.STIb);
         break;
       case OpCodes.STR:
         break;
@@ -396,10 +398,10 @@ class Lc3DartAssembler {
     bCommands.add(finalCommand);
   }
 
-  void writeLdLdiAndLea(int baseCommand) {
+  void writeLdLdiLeaStSti(int baseCommand) {
     if (commands.length != 3) {
       throw Exception(
-        'LD, LDI and LEA require exactly two arguments on line $currentLine.',
+        'LD, LDI, LEA, ST and STI require exactly two arguments on line $currentLine.',
       );
     }
 
