@@ -251,17 +251,19 @@ class Lc3DartAssembler {
       case OpCodes.LEA:
         writeLdLdiLeaStSti(OpCodes.LEAb);
         break;
-      case OpCodes.LDR:
-        break;
-      case OpCodes.RTI:
-        break;
       case OpCodes.ST:
         writeLdLdiLeaStSti(OpCodes.STb);
         break;
       case OpCodes.STI:
         writeLdLdiLeaStSti(OpCodes.STIb);
         break;
+      case OpCodes.LDR:
+        writeLdrAndStr(OpCodes.LDRb);
+        break;
       case OpCodes.STR:
+        writeLdrAndStr(OpCodes.STRb);
+        break;
+      case OpCodes.RTI:
         break;
       case OpCodes.BRZ:
         break;
@@ -292,15 +294,9 @@ class Lc3DartAssembler {
       case Macros.END:
         break;
       case Macros.ORIG:
-        // Decrement here to avoid counting macro in program
+        // Decrement here to avoid counting .ORIG macro in program
         // counter.
         programCounter--;
-        break;
-      case Macros.STRINGZ:
-        break;
-      case Macros.BLKW:
-        break;
-      case Macros.FILL:
         break;
       default:
         if (!symbols.hasSymbol(commands[0])) {
@@ -408,6 +404,30 @@ class Lc3DartAssembler {
     var register = Registers.toBinary(commands[1], 9, currentLine);
     var pcoffset = labelToPcoffset(commands[2], 9);
     var finalCommand = baseCommand | register | pcoffset;
+    bCommands.add(finalCommand);
+  }
+
+  void writeLdrAndStr(int baseCommand) {
+    if (commands.length != 4) {
+      throw Exception(
+        'STR and LDR require exactly three arguments on line $currentLine.',
+      );
+    }
+
+    var destRegister = Registers.toBinary(commands[1], 9, currentLine);
+    var baseRegister = Registers.toBinary(commands[2], 6, currentLine);
+
+    var offset = parseInt(commands[3], currentLine);
+    var maxOffset = (pow(2, 6) / 2 - 1).toInt();
+    if (offset.abs() > maxOffset) {
+      throw Exception(
+        'STR and LDR cannot accept an offset greater than 6 twos complement bits or $maxOffset on line $currentLine.',
+      );
+    }
+    var truncator = (pow(2, 6) - 1).toInt();
+    offset = offset & truncator;
+
+    var finalCommand = baseCommand | destRegister | baseRegister | offset;
     bCommands.add(finalCommand);
   }
 
