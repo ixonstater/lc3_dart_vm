@@ -193,6 +193,47 @@ void testLdrAndStr() {
   });
 }
 
+void testBr() {
+  var obj = Lc3DartAssembler();
+  obj.symbols.symbols.addAll({
+    'symbolOne': 10,
+    'symbolTwo': 15,
+    'symbolThree': 0,
+  });
+
+  test('Successfully write BRz', () {
+    obj.bCommands = [];
+    obj.programCounter = 12;
+    obj.commands = ['BRz', 'symbolOne'];
+    obj.writeBr();
+    expect(obj.bCommands[0], 1534);
+  });
+
+  test('Successfully write BRp', () {
+    obj.bCommands = [];
+    obj.programCounter = 12;
+    obj.commands = ['BRp', 'symbolOne'];
+    obj.writeBr();
+    expect(obj.bCommands[0], 1022);
+  });
+
+  test('Successfully write BRn', () {
+    obj.bCommands = [];
+    obj.programCounter = 12;
+    obj.commands = ['BRn', 'symbolOne'];
+    obj.writeBr();
+    expect(obj.bCommands[0], 2558);
+  });
+
+  test('Successfully write BRnzp', () {
+    obj.bCommands = [];
+    obj.programCounter = 12;
+    obj.commands = ['BRnzp', 'symbolOne'];
+    obj.writeBr();
+    expect(obj.bCommands[0], 4094);
+  });
+}
+
 void testLabelToPcoffset() {
   var obj = Lc3DartAssembler();
   obj.symbols.symbols.addAll({

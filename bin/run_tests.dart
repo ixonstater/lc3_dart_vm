@@ -9,6 +9,7 @@ void testAssembler() {
   testJsrAndJsrr();
   testLdLdiLeaStSti();
   testLdrAndStr();
+  testBr();
   testLabelToPcoffset();
   // Tests for global functions
   testCommentRemoval();

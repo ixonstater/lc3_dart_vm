@@ -264,10 +264,11 @@ class Lc3DartAssembler {
         case Traps.PUTS:
           break;
         case Macros.END:
+          programCounter--;
           break;
         case Macros.ORIG:
           // Decrement here to avoid counting .ORIG macro in program
-          // counter.
+          // counter.  No other action is necessary for this macro.
           programCounter--;
           break;
         default:
