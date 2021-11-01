@@ -24,13 +24,7 @@ class OpCodes {
   static const String ADD = 'ADD';
   static const String AND = 'AND';
   static const String NOT = 'NOT';
-  static const String BRN = 'BRN';
-  static const String BRP = 'BRP';
-  static const String BRZ = 'BRZ';
-  static const String BRNP = 'BRNP';
-  static const String BRNZ = 'BRNZ';
-  static const String BRPZ = 'BRPZ';
-  static const String BRNZP = 'BRNZP';
+  static const String BR = 'BR';
   static const String JMP = 'JMP';
   static const String JSR = 'JSR';
   static const String JSRR = 'JSRR';
@@ -70,19 +64,7 @@ class OpCodes {
         return OpCodes.ANDb;
       case OpCodes.NOT:
         return OpCodes.NOTb;
-      case OpCodes.BRZ:
-        return OpCodes.BRb;
-      case OpCodes.BRN:
-        return OpCodes.BRb;
-      case OpCodes.BRP:
-        return OpCodes.BRb;
-      case OpCodes.BRNP:
-        return OpCodes.BRb;
-      case OpCodes.BRNZ:
-        return OpCodes.BRb;
-      case OpCodes.BRPZ:
-        return OpCodes.BRb;
-      case OpCodes.BRNZP:
+      case OpCodes.BR:
         return OpCodes.BRb;
       case OpCodes.JMP:
         return OpCodes.JMPb;
@@ -220,95 +202,86 @@ class Lc3DartAssembler {
     if (commands.isEmpty) {
       return;
     }
-    switch (commands[0].toUpperCase()) {
-      case OpCodes.ADD:
-        writeAddOrAnd();
-        break;
-      case OpCodes.AND:
-        writeAddOrAnd();
-        break;
-      case OpCodes.NOT:
-        writeNot();
-        break;
-      case OpCodes.JMP:
-        writeJmpAndRet();
-        break;
-      case OpCodes.RET:
-        writeJmpAndRet();
-        break;
-      case OpCodes.JSR:
-        writeJsr();
-        break;
-      case OpCodes.JSRR:
-        writeJsr();
-        break;
-      case OpCodes.LD:
-        writeLdLdiLeaStSti(OpCodes.LDb);
-        break;
-      case OpCodes.LDI:
-        writeLdLdiLeaStSti(OpCodes.LDIb);
-        break;
-      case OpCodes.LEA:
-        writeLdLdiLeaStSti(OpCodes.LEAb);
-        break;
-      case OpCodes.ST:
-        writeLdLdiLeaStSti(OpCodes.STb);
-        break;
-      case OpCodes.STI:
-        writeLdLdiLeaStSti(OpCodes.STIb);
-        break;
-      case OpCodes.LDR:
-        writeLdrAndStr(OpCodes.LDRb);
-        break;
-      case OpCodes.STR:
-        writeLdrAndStr(OpCodes.STRb);
-        break;
-      case OpCodes.RTI:
-        break;
-      case OpCodes.BRZ:
-        break;
-      case OpCodes.BRN:
-        break;
-      case OpCodes.BRP:
-        break;
-      case OpCodes.BRNP:
-        break;
-      case OpCodes.BRNZ:
-        break;
-      case OpCodes.BRPZ:
-        break;
-      case OpCodes.BRNZP:
-        break;
-      case OpCodes.TRAP:
-        break;
-      case Traps.GETC:
-        break;
-      case Traps.HALT:
-        break;
-      case Traps.IN:
-        break;
-      case Traps.OUT:
-        break;
-      case Traps.PUTS:
-        break;
-      case Macros.END:
-        break;
-      case Macros.ORIG:
-        // Decrement here to avoid counting .ORIG macro in program
-        // counter.
-        programCounter--;
-        break;
-      default:
-        if (!symbols.hasSymbol(commands[0])) {
-          throw Exception(
-            'Invalid instruction ${commands[0]} at line $currentLine.',
-          );
-        } else {
-          // Decrement here to avoid counting symbol as part
-          // of overall program counter offset.
+    // Special case for BR opcode which does not fit in the
+    // simple matching logic of the switch case.
+    else if (commands[0].toUpperCase().contains(OpCodes.BR)) {
+      writeBr();
+      return;
+    } else {
+      switch (commands[0].toUpperCase()) {
+        case OpCodes.ADD:
+          writeAddOrAnd();
+          break;
+        case OpCodes.AND:
+          writeAddOrAnd();
+          break;
+        case OpCodes.NOT:
+          writeNot();
+          break;
+        case OpCodes.JMP:
+          writeJmpAndRet();
+          break;
+        case OpCodes.RET:
+          writeJmpAndRet();
+          break;
+        case OpCodes.JSR:
+          writeJsr();
+          break;
+        case OpCodes.JSRR:
+          writeJsr();
+          break;
+        case OpCodes.LD:
+          writeLdLdiLeaStSti(OpCodes.LDb);
+          break;
+        case OpCodes.LDI:
+          writeLdLdiLeaStSti(OpCodes.LDIb);
+          break;
+        case OpCodes.LEA:
+          writeLdLdiLeaStSti(OpCodes.LEAb);
+          break;
+        case OpCodes.ST:
+          writeLdLdiLeaStSti(OpCodes.STb);
+          break;
+        case OpCodes.STI:
+          writeLdLdiLeaStSti(OpCodes.STIb);
+          break;
+        case OpCodes.LDR:
+          writeLdrAndStr(OpCodes.LDRb);
+          break;
+        case OpCodes.STR:
+          writeLdrAndStr(OpCodes.STRb);
+          break;
+        case OpCodes.TRAP:
+          break;
+        case Traps.GETC:
+          break;
+        case Traps.HALT:
+          break;
+        case Traps.IN:
+          break;
+        case Traps.OUT:
+          break;
+        case Traps.PUTS:
+          break;
+        case Macros.END:
+          break;
+        case Macros.ORIG:
+          // Decrement here to avoid counting .ORIG macro in program
+          // counter.
           programCounter--;
-          // TODO: Implement symbol writing.
-        }
+          break;
+        default:
+          if (!symbols.hasSymbol(commands[0])) {
+            throw Exception(
+              'Invalid instruction ${commands[0]} at line $currentLine.',
+            );
+          } else {
+            // Decrement here to avoid counting symbol as part
+            // of overall program counter offset.
+            programCounter--;
+            // TODO: Implement symbol writing.
+          }
+      }
     }
   }
 
@@ -431,12 +404,22 @@ class Lc3DartAssembler {
     bCommands.add(finalCommand);
   }
 
-  void writeBr(bool n, bool z, bool p) {
-    if (commands.length != 3) {
+  void writeBr() {
+    if (commands.length != 2) {
       throw Exception(
-        '${commands[0]} opcode requires exactly three arguments at line: $currentLine.',
+        'BR requires exactly one argument at line: $currentLine.',
       );
     }
+
+    var n = commands[0].toUpperCase().contains('N') ? 1 << 11 : 0;
+    var z = commands[0].toUpperCase().contains('Z') ? 1 << 10 : 0;
+    var p = commands[0].toUpperCase().contains('P') ? 1 << 9 : 0;
+
+    var baseCommand = OpCodes.BRb;
+    var offset = labelToPcoffset(commands[1], 9);
+    var finalCommand = baseCommand | n | z | p | offset;
+
+    bCommands.add(finalCommand);
   }
 
   int labelToPcoffset(String label, int offsetBitLength) {
