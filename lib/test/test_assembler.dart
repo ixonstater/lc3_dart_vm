@@ -171,6 +171,28 @@ void testLdLdiLeaStSti() {
   });
 }
 
+void testLdrAndStr() {
+  test('Succesfully write LDR instruction with negative offset.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['ldr', 'r1', 'r3', '-4'];
+    obj.writeLdrAndStr(OpCodes.LDRb);
+    expect(obj.bCommands[0], 25340);
+  });
+
+  test('Succesfully write STR instruction with negative offset.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['str', 'r1', 'r3', '-4'];
+    obj.writeLdrAndStr(OpCodes.STRb);
+    expect(obj.bCommands[0], 29436);
+  });
+
+  test('Fail with memory offset to large.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['str', 'r1', 'r3', '-32'];
+    expect(() => obj.writeLdrAndStr(OpCodes.STRb), throwsException);
+  });
+}
+
 void testLabelToPcoffset() {
   var obj = Lc3DartAssembler();
   obj.symbols.symbols.addAll({
