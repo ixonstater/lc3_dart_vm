@@ -234,6 +234,47 @@ void testBr() {
   });
 }
 
+void testAllocationSymbolWriting() {}
+
+void testTrapWriting() {
+  test('Write GETC trap.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['GETC'];
+    obj.writeTrap();
+    expect(obj.bCommands[0], 61472);
+  });
+  test('Write OUT trap.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['OUT'];
+    obj.writeTrap();
+    expect(obj.bCommands[0], 61473);
+  });
+  test('Write PUTS trap.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['PUTS'];
+    obj.writeTrap();
+    expect(obj.bCommands[0], 61474);
+  });
+  test('Write IN trap.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['IN'];
+    obj.writeTrap();
+    expect(obj.bCommands[0], 61475);
+  });
+  test('Write PUTSP trap.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['PUTSP'];
+    obj.writeTrap();
+    expect(obj.bCommands[0], 61476);
+  });
+  test('Write HALT trap.', () {
+    var obj = Lc3DartAssembler();
+    obj.commands = ['HALT'];
+    obj.writeTrap();
+    expect(obj.bCommands[0], 61477);
+  });
+}
+
 void testLabelToPcoffset() {
   var obj = Lc3DartAssembler();
   obj.symbols.symbols.addAll({

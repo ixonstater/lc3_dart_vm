@@ -10,6 +10,8 @@ void testAssembler() {
   testLdLdiLeaStSti();
   testLdrAndStr();
   testBr();
+  testAllocationSymbolWriting();
+  testTrapWriting();
   testLabelToPcoffset();
   // Tests for global functions
   testCommentRemoval();
