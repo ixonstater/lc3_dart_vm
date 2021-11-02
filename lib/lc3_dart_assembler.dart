@@ -188,7 +188,6 @@ class Lc3DartAssembler {
       (line) {
         line = preprocessLine(line);
         if (line.isNotEmpty) {
-          line = line.replaceAll(',', '');
           commands = line.split(RegExp('[ \t]+'));
           routeLineStart(line);
           programCounter++;
@@ -280,7 +279,7 @@ class Lc3DartAssembler {
             // Decrement here to avoid counting symbol as part
             // of overall program counter offset.
             programCounter--;
-            // TODO: Implement symbol writing.
+            writeStringzBlkwAndFill(line);
           }
       }
     }
@@ -421,6 +420,45 @@ class Lc3DartAssembler {
     var finalCommand = baseCommand | n | z | p | offset;
 
     bCommands.add(finalCommand);
+  }
+
+  void writeStringzBlkwAndFill(String line) {
+    if (commands.length == 1) {
+      // Standalone symbols need no extra processing.
+      return;
+    } else if (commands.length < 3) {
+      throw Exception(
+        '.STRINGZ, .BLKW or .FILL require a value argument at line $currentLine.',
+      );
+    } else if (commands[1].toUpperCase() == Macros.FILL) {
+      var value = parseInt(commands[2], currentLine);
+      bCommands.add(value);
+      // Increment once for single memory space.
+      programCounter++;
+    } else if (commands[1].toUpperCase() == Macros.BLKW) {
+      var spaces = parseInt(commands[2], currentLine);
+      bCommands.addAll(List.generate(spaces, (index) => 0));
+      // Increment for each space added.
+      programCounter += spaces;
+    } else if (commands[1].toUpperCase() == Macros.STRINGZ) {
+      var firstWordIndex = line.indexOf(RegExp('[ \t]+'));
+      var secondWordIndex = line.indexOf(RegExp('[ \t]+'), firstWordIndex + 1);
+      var stringLiteral = processStringLiteral(
+        line.substring(secondWordIndex + 1),
+      );
+
+      if (stringLiteral == null) {
+        throw Exception(
+          'Failed to parse string literal on line $currentLine.',
+        );
+      }
+
+      bCommands.addAll(stringLiteral.codeUnits);
+      // Null terminated
+      bCommands.add(0);
+      // Increment for each character and null terminator.
+      programCounter += stringLiteral.length + 1;
+    }
   }
 
   int labelToPcoffset(String label, int offsetBitLength) {
