@@ -331,7 +331,7 @@ void testLabelToPcoffset() {
     var offset = obj.labelToPcoffset('symbolTwo', 11);
     expect(offset, 14);
     offset = obj.labelToPcoffset('symbolThree', 11);
-    expect(offset, 0);
+    expect(offset, 2047);
   });
 
   test('Successfully calculate negative offset.', () {
