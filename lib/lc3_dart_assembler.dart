@@ -201,8 +201,9 @@ class Lc3DartAssembler {
   void assemble(String path) async {
     await symbols.markSymbols(path);
     await processOpCodes(path);
-    await writeBinaryFile(path);
-    await symbols.writeSymbolsFile();
+    // await writeBinaryFile(path);
+    // await symbols.writeSymbolsFile();
+    await writeBinRep();
   }
 
   Future<void> writeBinaryFile(String path) async {}
@@ -337,22 +338,24 @@ class Lc3DartAssembler {
     var destination = Registers.toBinary(commands[1], 9, currentLine);
     var sourceOne = Registers.toBinary(commands[2], 6, currentLine);
 
-    var parsedImmediate = int.tryParse(commands[3]);
-    var sourceTwo;
-    var immediateFlag;
-    if (parsedImmediate != null) {
-      var immediateLimit = pow(2, 5) - 1;
-      if (parsedImmediate > (immediateLimit)) {
-        throw Exception(
-          'Integers greater than $immediateLimit (5 bits) cannot be used as immediate values on line $currentLine.',
-        );
-      } else {
-        immediateFlag = 1 << 5;
-        sourceTwo = parsedImmediate;
-      }
-    } else {
+    int parsedImmediate;
+    int sourceTwo;
+    int immediateFlag;
+    try {
       immediateFlag = 0;
       sourceTwo = Registers.toBinary(commands[3], 0, currentLine);
+    } catch (e) {
+      parsedImmediate = parseInt(commands[3], currentLine);
+      var immediateLimit = (pow(2, 4) - 1).toInt();
+      if (parsedImmediate.abs() > immediateLimit) {
+        throw Exception(
+          'Integers greater than $immediateLimit (or 5 twos complement bits) cannot be used as immediate values on line $currentLine.',
+        );
+      }
+      immediateFlag = 1 << 5;
+      var truncator = (pow(2, 5) - 1).toInt();
+      // Immediate value must be truncated down to maximum 5 bits.
+      sourceTwo = parsedImmediate & truncator;
     }
 
     var finalCommand =
@@ -542,6 +545,16 @@ class Lc3DartAssembler {
     var truncator = (pow(2, offsetBitLength) - 1) as int;
     pcoffset = truncator & pcoffset;
     return pcoffset;
+  }
+
+  Future<void> writeBinRep() async {
+    var outFile = File('./program_bin.txt').openWrite();
+    bCommands.forEach((element) {
+      outFile.writeln(BigInt.from(element).toUnsigned(64).toRadixString(2));
+    });
+
+    await outFile.done;
+    await outFile.close();
   }
 }
 

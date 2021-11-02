@@ -11,9 +11,9 @@ void testAdd() {
 
   test('Successfully add with immediate value.', () {
     var obj = Lc3DartAssembler();
-    obj.commands = ['ADD', 'R7', 'R3', '30'];
+    obj.commands = ['ADD', 'R7', 'R3', '14'];
     obj.writeAddOrAnd();
-    expect(7934, obj.bCommands[0]);
+    expect(7918, obj.bCommands[0]);
   });
 
   test('Fail to add with mis-named register.', () {
@@ -24,7 +24,7 @@ void testAdd() {
 
   test('Fail to add with overflow immediate value.', () {
     var obj = Lc3DartAssembler();
-    obj.commands = ['ADD', 'R7', 'R3', '32'];
+    obj.commands = ['ADD', 'R7', 'R3', '16'];
     expect(obj.writeAddOrAnd, throwsException);
   });
 }
@@ -39,9 +39,9 @@ void testAnd() {
 
   test('Successfully and with immediate value.', () {
     var obj = Lc3DartAssembler();
-    obj.commands = ['AND', 'R7', 'R3', '30'];
+    obj.commands = ['AND', 'R7', 'R3', '-1'];
     obj.writeAddOrAnd();
-    expect(24318, obj.bCommands[0]);
+    expect(24319, obj.bCommands[0]);
   });
 
   test('Fail to and with mis-named register.', () {
@@ -52,7 +52,7 @@ void testAnd() {
 
   test('Fail to and with overflow immediate value.', () {
     var obj = Lc3DartAssembler();
-    obj.commands = ['AND', 'R7', 'R3', '32'];
+    obj.commands = ['AND', 'R7', 'R3', '16'];
     expect(obj.writeAddOrAnd, throwsException);
   });
 }
