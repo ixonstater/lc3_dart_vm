@@ -234,7 +234,51 @@ void testBr() {
   });
 }
 
-void testAllocationSymbolWriting() {}
+void testAllocationSymbolWriting() {
+  var obj = Lc3DartAssembler();
+  obj.symbols.symbols = {
+    'standalone': 10,
+    'stringz': 15,
+    'blkw': 20,
+    'fill': 22,
+  };
+
+  test('Skip standalone symbol.', () {
+    obj.bCommands = [];
+    obj.commands = ['standalone'];
+    obj.writeStringzBlkwAndFill('standalone');
+    expect(obj.bCommands, []);
+  });
+  test('Test fail with missing argument.', () {
+    obj.bCommands = [];
+    obj.commands = ['stringz', '.stringz'];
+    expect(() => obj.writeStringzBlkwAndFill('stringz'), throwsException);
+  });
+  test('Successfully .FILL.', () {
+    obj.bCommands = [];
+    obj.commands = ['fill', '.FILL', '0x95'];
+    obj.programCounter = 0;
+    obj.writeStringzBlkwAndFill('fill .FILL 0x95');
+    expect(obj.bCommands[0], 149);
+    expect(obj.programCounter, 1);
+  });
+  test('Successfully .BLKW.', () {
+    obj.bCommands = [];
+    obj.commands = ['blkw', '.BLKW', '10'];
+    obj.programCounter = 0;
+    obj.writeStringzBlkwAndFill('blkw .BLKW 10');
+    expect(obj.bCommands[0], 0);
+    expect(obj.programCounter, 10);
+  });
+  test('Successfully .STRINGZ.', () {
+    obj.bCommands = [];
+    obj.commands = ['stringz', '.STRINGZ', '"A test string."'];
+    obj.programCounter = 0;
+    obj.writeStringzBlkwAndFill('stringz .STRINGZ "A test string."');
+    expect(obj.bCommands[0], 65);
+    expect(obj.programCounter, 15);
+  });
+}
 
 void testTrapWriting() {
   test('Write GETC trap.', () {
