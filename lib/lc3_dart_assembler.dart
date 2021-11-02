@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'dart:math';
 
+import 'dart:typed_data';
+
 class Macros {
   static const String STRINGZ = '.STRINGZ';
   static const String BLKW = '.BLKW';
@@ -201,7 +203,7 @@ class Lc3DartAssembler {
   void assemble(String path) async {
     await symbols.markSymbols(path);
     await processOpCodes(path);
-    // await writeBinaryFile(path);
+    await writeBinaryFile(path);
     // await symbols.writeSymbolsFile();
     await writeBinRep();
   }
@@ -548,9 +550,12 @@ class Lc3DartAssembler {
   }
 
   Future<void> writeBinRep() async {
-    var outFile = File('./program_bin.txt').openWrite();
-    bCommands.forEach((element) {
-      outFile.writeln(BigInt.from(element).toUnsigned(64).toRadixString(2));
+    var outFile = File('./temp/program_bin.txt').openWrite();
+    var bCommands16 = Uint16List.fromList(bCommands);
+    bCommands16.forEach((element) {
+      var line = element.toRadixString(2);
+      line = '0' * (16 - line.length) + line;
+      outFile.writeln(line);
     });
 
     await outFile.done;
@@ -568,7 +573,7 @@ class Lc3DartSymbols {
   final int maximumMemorySpace = 65023;
 
   Future<void> writeSymbolsFile() async {
-    var outFile = File('./program.sym').openWrite();
+    var outFile = File('./temp/program.sym').openWrite();
     outFile.writeln('//Symbol table');
     outFile.writeln('//     Symbol Name              Page Address');
     outFile.writeln('//     -----------              ------------');
