@@ -203,13 +203,14 @@ class Lc3DartAssembler {
     await symbols.markSymbols(path);
     await processOpCodes(path);
     await writeBinaryFile(path);
-    // await symbols.writeSymbolsFile();
+    await symbols.writeSymbolsFile(path);
     // await writeBinRep();
   }
 
   Future<void> writeBinaryFile(String filePath) async {
     var dirName = path.dirname(filePath);
-    var file = File(dirName + '/prog.obj');
+    var fileName = path.basenameWithoutExtension(filePath) + '.obj';
+    var file = File(dirName + '/' + fileName);
     var bCommandsSplit = <int>[];
     bCommands.forEach((element) {
       var topByte = element >> 8;
@@ -545,7 +546,13 @@ class Lc3DartAssembler {
     }
 
     var labelLocation = symbols.symbols[label]!;
-    var pcoffset = labelLocation - programCounter;
+    // The minus one here is important because adding
+    // the offset to the PC should put it one instruction
+    // short of its target.  The when the counter is
+    // incremented following the successfully execution
+    // of the current instruction it will increment and
+    // be ready to execute the next instruction.
+    var pcoffset = labelLocation - programCounter - 1;
     // Maximum offset is the maximum twos complement
     // integer representable by offsetBitLength bits
     var maxOffset = (pow(2, offsetBitLength) / 2 - 1).toInt();
@@ -555,6 +562,8 @@ class Lc3DartAssembler {
       );
     }
 
+    // May need to trucate here because memory offsets
+    // can be negative twos complement integers.
     var truncator = (pow(2, offsetBitLength) - 1) as int;
     pcoffset = truncator & pcoffset;
     return pcoffset;
@@ -583,8 +592,10 @@ class Lc3DartSymbols {
   final int minimumMemorySpace = 12288;
   final int maximumMemorySpace = 65023;
 
-  Future<void> writeSymbolsFile() async {
-    var outFile = File('./temp/program.sym').openWrite();
+  Future<void> writeSymbolsFile(String filePath) async {
+    var dirName = path.dirname(filePath);
+    var fileName = path.basenameWithoutExtension(filePath) + '.sym';
+    var outFile = File(dirName + '/' + fileName).openWrite();
     outFile.writeln('//Symbol table');
     outFile.writeln('//     Symbol Name              Page Address');
     outFile.writeln('//     -----------              ------------');
