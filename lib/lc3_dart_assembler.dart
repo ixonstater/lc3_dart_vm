@@ -553,6 +553,16 @@ class Lc3DartAssembler {
     // of the current instruction it will increment and
     // be ready to execute the next instruction.
     var pcoffset = labelLocation - programCounter - 1;
+    // Special case where the offset is negative one, this
+    // happens when the distance between the current
+    // location and the next location is zero.  Since
+    // the counter will increment anyway zero should be
+    // the offset.  In any case, a PC change of -1 will
+    // always result in an infinite loop and so should
+    // not occur.
+    if (pcoffset == -1) {
+      pcoffset = 0;
+    }
     // Maximum offset is the maximum twos complement
     // integer representable by offsetBitLength bits
     var maxOffset = (pow(2, offsetBitLength) / 2 - 1).toInt();

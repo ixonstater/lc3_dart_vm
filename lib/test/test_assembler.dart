@@ -106,7 +106,7 @@ void testJsrAndJsrr() {
     obj.bCommands = [];
     obj.commands = ['JSR', 'symbolOne'];
     obj.writeJsr();
-    expect(obj.bCommands[0], 18442);
+    expect(obj.bCommands[0], 18441);
   });
   test('Succesfully add JSRR command.', () {
     obj.bCommands = [];
@@ -139,35 +139,35 @@ void testLdLdiLeaStSti() {
     obj.bCommands = [];
     obj.commands = ['LD', 'r1', 'symbolOne'];
     obj.writeLdLdiLeaStSti(OpCodes.LDb);
-    expect(obj.bCommands[0], 8714);
+    expect(obj.bCommands[0], 8713);
   });
 
   test('Succesfully write LEA', () {
     obj.bCommands = [];
     obj.commands = ['LEA', 'r1', 'symbolOne'];
     obj.writeLdLdiLeaStSti(OpCodes.LEAb);
-    expect(obj.bCommands[0], 57866);
+    expect(obj.bCommands[0], 57865);
   });
 
   test('Succesfully write LDI', () {
     obj.bCommands = [];
     obj.commands = ['LDI', 'r1', 'symbolOne'];
     obj.writeLdLdiLeaStSti(OpCodes.LDIb);
-    expect(obj.bCommands[0], 41482);
+    expect(obj.bCommands[0], 41481);
   });
 
   test('Succesfully write ST', () {
     obj.bCommands = [];
     obj.commands = ['ST', 'r1', 'symbolOne'];
     obj.writeLdLdiLeaStSti(OpCodes.STb);
-    expect(obj.bCommands[0], 12810);
+    expect(obj.bCommands[0], 12809);
   });
 
   test('Succesfully write STI', () {
     obj.bCommands = [];
     obj.commands = ['STI', 'r1', 'symbolOne'];
     obj.writeLdLdiLeaStSti(OpCodes.STIb);
-    expect(obj.bCommands[0], 45578);
+    expect(obj.bCommands[0], 45577);
   });
 }
 
@@ -206,7 +206,7 @@ void testBr() {
     obj.programCounter = 12;
     obj.commands = ['BRz', 'symbolOne'];
     obj.writeBr();
-    expect(obj.bCommands[0], 1534);
+    expect(obj.bCommands[0], 1533);
   });
 
   test('Successfully write BRp', () {
@@ -214,7 +214,7 @@ void testBr() {
     obj.programCounter = 12;
     obj.commands = ['BRp', 'symbolOne'];
     obj.writeBr();
-    expect(obj.bCommands[0], 1022);
+    expect(obj.bCommands[0], 1021);
   });
 
   test('Successfully write BRn', () {
@@ -222,7 +222,7 @@ void testBr() {
     obj.programCounter = 12;
     obj.commands = ['BRn', 'symbolOne'];
     obj.writeBr();
-    expect(obj.bCommands[0], 2558);
+    expect(obj.bCommands[0], 2557);
   });
 
   test('Successfully write BRnzp', () {
@@ -230,7 +230,7 @@ void testBr() {
     obj.programCounter = 12;
     obj.commands = ['BRnzp', 'symbolOne'];
     obj.writeBr();
-    expect(obj.bCommands[0], 4094);
+    expect(obj.bCommands[0], 4093);
   });
 }
 
@@ -329,7 +329,7 @@ void testLabelToPcoffset() {
 
   test('Successfully calculate pcoffset', () {
     var offset = obj.labelToPcoffset('symbolTwo', 11);
-    expect(offset, 15);
+    expect(offset, 14);
     offset = obj.labelToPcoffset('symbolThree', 11);
     expect(offset, 0);
   });
@@ -337,7 +337,7 @@ void testLabelToPcoffset() {
   test('Successfully calculate negative offset.', () {
     obj.programCounter = 15;
     var offset = obj.labelToPcoffset('symbolOne', 9);
-    expect(offset, 507);
+    expect(offset, 506);
   });
 
   test('Fail with missing symbol.', () {
