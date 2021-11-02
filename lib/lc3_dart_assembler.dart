@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'dart:math';
-
 import 'dart:typed_data';
+import 'package:path/path.dart' as path;
 
 class Macros {
   static const String STRINGZ = '.STRINGZ';
@@ -205,14 +204,26 @@ class Lc3DartAssembler {
     await processOpCodes(path);
     await writeBinaryFile(path);
     // await symbols.writeSymbolsFile();
-    await writeBinRep();
+    // await writeBinRep();
   }
 
-  Future<void> writeBinaryFile(String path) async {}
+  Future<void> writeBinaryFile(String filePath) async {
+    var dirName = path.dirname(filePath);
+    var file = File(dirName + '/prog.obj');
+    var bCommandsSplit = <int>[];
+    bCommands.forEach((element) {
+      var topByte = element >> 8;
+      bCommandsSplit.add(topByte);
+      bCommandsSplit.add(element);
+    });
+    var bCommands8 = Uint8List.fromList(bCommandsSplit);
+    await file.writeAsBytes(bCommands8);
+  }
 
   Future<void> processOpCodes(String path) async {
     currentLine = 1;
     programCounter = symbols.origin;
+    bCommands.add(symbols.origin);
     await File(path)
         .openRead()
         .map(utf8.decode)
