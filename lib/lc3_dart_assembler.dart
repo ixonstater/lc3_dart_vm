@@ -53,7 +53,7 @@ class OpCodes {
   static final int STb = 3 << 12;
   static final int STIb = 11 << 12;
   static final int STRb = 7 << 12;
-  static final int TRAPb = 16 << 12;
+  static final int TRAPb = 15 << 12;
 
   static int toBinary(String opCode) {
     opCode = opCode.toUpperCase();
@@ -148,8 +148,37 @@ class Traps {
   static const String GETC = 'GETC';
   static const String OUT = 'OUT';
   static const String PUTS = 'PUTS';
+  static const String PUTSP = 'PUTSP';
   static const String IN = 'IN';
   static const String HALT = 'HALT';
+
+  static const int GETCb = 32;
+  static const int OUTb = 33;
+  static const int PUTSb = 34;
+  static const int INb = 35;
+  static const int PUTSPb = 36;
+  static const int HALTb = 37;
+
+  static int toBinary(String trapCode, int currentLine) {
+    switch (trapCode) {
+      case Traps.GETC:
+        return Traps.GETCb;
+      case Traps.OUT:
+        return Traps.OUTb;
+      case Traps.PUTS:
+        return Traps.PUTSb;
+      case Traps.IN:
+        return Traps.INb;
+      case Traps.PUTSP:
+        return Traps.PUTSPb;
+      case Traps.HALT:
+        return Traps.HALTb;
+      default:
+        throw Exception(
+          'Failed to parse trap code found on line $currentLine.',
+        );
+    }
+  }
 
   static bool isTrap(String str) {
     str = str.toUpperCase();
@@ -157,6 +186,7 @@ class Traps {
         str == Traps.OUT ||
         str == Traps.PUTS ||
         str == Traps.IN ||
+        str == Traps.PUTSP ||
         str == Traps.HALT;
   }
 }
@@ -251,16 +281,25 @@ class Lc3DartAssembler {
           writeLdrAndStr(OpCodes.STRb);
           break;
         case OpCodes.TRAP:
+          writeTrap();
           break;
         case Traps.GETC:
+          writeTrap();
           break;
         case Traps.HALT:
+          writeTrap();
           break;
         case Traps.IN:
+          writeTrap();
           break;
         case Traps.OUT:
+          writeTrap();
           break;
         case Traps.PUTS:
+          writeTrap();
+          break;
+        case Traps.PUTSP:
+          writeTrap();
           break;
         case Macros.END:
           print(
@@ -422,6 +461,24 @@ class Lc3DartAssembler {
     var offset = labelToPcoffset(commands[1], 9);
     var finalCommand = baseCommand | n | z | p | offset;
 
+    bCommands.add(finalCommand);
+  }
+
+  void writeTrap() {
+    String trap;
+    if (commands.length == 1) {
+      trap = commands[0];
+    } else if (commands.length == 2) {
+      trap = commands[1];
+    } else {
+      throw Exception(
+        'TRAP opcode takes exactly one argument (TRAP opcode may also be ommited) on line $currentLine.',
+      );
+    }
+
+    var binaryTrap = Traps.toBinary(trap.toUpperCase(), currentLine);
+    var baseCommand = OpCodes.TRAPb;
+    var finalCommand = baseCommand | binaryTrap;
     bCommands.add(finalCommand);
   }
 
