@@ -263,6 +263,9 @@ class Lc3DartAssembler {
         case Traps.PUTS:
           break;
         case Macros.END:
+          print(
+            'This assembler does not make use of the .END macro as it serves no real purpose.',
+          );
           programCounter--;
           break;
         case Macros.ORIG:
