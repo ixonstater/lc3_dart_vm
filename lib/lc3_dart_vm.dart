@@ -129,6 +129,8 @@ class Lc3DartVm {
       var sourceTwoReg = inst & 7;
       registers[destReg] = registers[sourceReg] + registers[sourceTwoReg];
     }
+
+    updateFlags(destReg);
   }
 
   void and(int inst) {
@@ -142,12 +144,25 @@ class Lc3DartVm {
       var sourceTwoReg = inst & 7;
       registers[destReg] = registers[sourceReg] & registers[sourceTwoReg];
     }
+
+    updateFlags(destReg);
   }
 
   void not(int inst) {
     var destReg = (inst >> 9) & 7;
     var sourceReg = (inst >> 6) & 7;
     registers[destReg] = ~registers[sourceReg];
+    updateFlags(destReg);
+  }
+
+  void updateFlags(int reg) {
+    if (registers[reg] == 0) {
+      registers[Registers.COND] = Conditionals.ZERO;
+    } else if (registers[reg] >> 15 == 1) {
+      registers[Registers.COND] = Conditionals.NEG;
+    } else {
+      registers[Registers.COND] = Conditionals.POS;
+    }
   }
 
   int signExtend(int number, int bitCount) {

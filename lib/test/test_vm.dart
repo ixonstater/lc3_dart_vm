@@ -93,3 +93,24 @@ void testSignExtend() {
     expect(num, -347);
   });
 }
+
+void testUpdateFlags() {
+  test('Update flags negative.', () {
+    var obj = Lc3DartVm();
+    obj.registers[Registers.R0] = -1;
+    obj.updateFlags(Registers.R0);
+    expect(obj.registers[Registers.COND], Conditionals.NEG);
+  });
+  test('Update flags positive.', () {
+    var obj = Lc3DartVm();
+    obj.registers[Registers.R0] = 1;
+    obj.updateFlags(Registers.R0);
+    expect(obj.registers[Registers.COND], Conditionals.POS);
+  });
+  test('Update flags zero.', () {
+    var obj = Lc3DartVm();
+    obj.registers[Registers.R0] = 0;
+    obj.updateFlags(Registers.R0);
+    expect(obj.registers[Registers.COND], Conditionals.ZERO);
+  });
+}

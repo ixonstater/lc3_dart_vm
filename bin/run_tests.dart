@@ -29,6 +29,7 @@ void testVm() {
   testSignExtend();
   testAndVm();
   testNotVm();
+  testUpdateFlags();
 }
 
 void main(List<String> args) {
