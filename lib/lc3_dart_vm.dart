@@ -116,7 +116,26 @@ class Lc3DartVm {
     }
   }
 
-  void add(int instruction) {}
+  void add(int instruction) {
+    var destReg = (instruction >> 9) & 7;
+    var sourceReg = (instruction >> 6) & 7;
+    var immediateFlag = (instruction >> 5) & 1;
+    if (immediateFlag == 1) {
+      var immediate = signExtend(instruction & 31, 5);
+      registers[destReg] = registers[sourceReg] + immediate;
+    } else {
+      var sourceTwoReg = instruction & 7;
+      registers[destReg] = registers[sourceReg] + registers[sourceTwoReg];
+    }
+  }
+
+  int signExtend(int number, int bitCount) {
+    var highBitSet = (number >> (bitCount - 1)) & 1 == 1;
+    if (highBitSet) {
+      number = number | (0xFFFF << bitCount);
+    }
+    return number;
+  }
 
   int readMem(int address) {
     return memory[address];

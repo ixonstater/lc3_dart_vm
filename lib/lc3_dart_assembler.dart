@@ -771,6 +771,6 @@ int parseInt(String num, int currentLine) {
   return returnVal;
 }
 
-void printBin(int num) {
-  print(BigInt.from(num).toUnsigned(64).toRadixString(2));
-}
+// void printBin(int num) {
+//   print(BigInt.from(num).toUnsigned(64).toRadixString(2));
+// }
