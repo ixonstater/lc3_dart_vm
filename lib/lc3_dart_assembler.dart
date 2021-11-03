@@ -199,11 +199,11 @@ class Lc3DartAssembler {
   int programCounter = 0;
   Lc3DartSymbols symbols = Lc3DartSymbols();
 
-  void assemble(String path) async {
+  Future<void> assemble(String path) async {
     await symbols.markSymbols(path);
     await processOpCodes(path);
-    await writeBinaryFile(path);
-    await symbols.writeSymbolsFile(path);
+    // await writeBinaryFile(path);
+    // await symbols.writeSymbolsFile(path);
     // await writeBinRep();
   }
 
