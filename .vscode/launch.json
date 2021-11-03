@@ -15,6 +15,12 @@
             "request": "launch",
             "type": "dart",
             "program": "${workspaceRoot}/bin/run_tests.dart"
+        },
+        {
+            "name": "VM",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceRoot}/bin/run_vm.dart"
         }
     ]
 }

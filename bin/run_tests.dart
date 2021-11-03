@@ -1,4 +1,5 @@
 import 'package:lc3_dart_vm/test/test_assembler.dart';
+import 'package:lc3_dart_vm/test/test_vm.dart';
 
 void testAssembler() {
   // Tests for binary commands generator
@@ -23,6 +24,9 @@ void testAssembler() {
   testMarkBlkwSymbol();
 }
 
+void testVm() {}
+
 void main(List<String> args) {
   testAssembler();
+  testVm();
 }
