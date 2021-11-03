@@ -9,22 +9,46 @@ void testAddOpCode() {
   });
   test('Add with negative immediate.', () {
     var obj = Lc3DartVm();
-    obj.registers[Registers.R_R1] = 2;
+    obj.registers[Registers.R1] = 2;
     obj.add(int.parse('0001000001111110', radix: 2));
     expect(obj.registers[0], 0);
   });
   test('Add with three registers.', () {
     var obj = Lc3DartVm();
-    obj.registers[Registers.R_R1] = 1;
-    obj.registers[Registers.R_R2] = 2;
+    obj.registers[Registers.R1] = 1;
+    obj.registers[Registers.R2] = 2;
     obj.add(int.parse('0001000001000010', radix: 2));
     expect(obj.registers[0], 3);
   });
   test('Test wrap around addition at 16 bit int limit.', () {
     var obj = Lc3DartVm();
-    obj.registers[Registers.R_R1] = 65535;
+    obj.registers[Registers.R1] = 65535;
     obj.add(int.parse('0001000001100001', radix: 2));
     expect(obj.registers[0], 0);
+  });
+}
+
+void testAndOpCode() {
+  test('And with positive immediate', () {
+    var obj = Lc3DartVm();
+    obj.registers[Registers.R1] = 7;
+    obj.and(int.parse('0101000001100101'));
+    expect(obj.registers[Registers.R0], 5);
+  });
+
+  test('And with negative immediate', () {
+    var obj = Lc3DartVm();
+    obj.registers[Registers.R1] = 7;
+    obj.and(int.parse('0101000001111111'));
+    expect(obj.registers[Registers.R0], 7);
+  });
+
+  test('And with three registers', () {
+    var obj = Lc3DartVm();
+    obj.registers[Registers.R1] = 7;
+    obj.registers[Registers.R2] = 3;
+    obj.and(int.parse('0101000001000010'));
+    expect(obj.registers[Registers.R0], 3);
   });
 }
 
