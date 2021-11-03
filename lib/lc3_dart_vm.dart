@@ -45,8 +45,8 @@ class Conditionals {
 
 class Lc3DartVm {
   // Use 2^16 here to avoid using dart numerics package.
-  Int16List memory = Int16List(pow(2, 16).toInt());
-  Int16List registers = Int16List(Registers.R_COUNT);
+  Uint16List memory = Uint16List(pow(2, 16).toInt());
+  Uint16List registers = Uint16List(Registers.R_COUNT);
   int condition = Conditionals.FL_ZERO;
   bool running = true;
 

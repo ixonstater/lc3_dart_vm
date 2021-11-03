@@ -24,7 +24,9 @@ void testAssembler() {
   testMarkBlkwSymbol();
 }
 
-void testVm() {}
+void testVm() {
+  testAddOpCode();
+}
 
 void main(List<String> args) {
   testAssembler();
