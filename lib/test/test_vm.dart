@@ -1,7 +1,7 @@
 import 'package:lc3_dart_vm/lc3_dart_vm.dart';
 import 'package:test/test.dart';
 
-void testAddOpCode() {
+void testAddVm() {
   test('Add with positive immediate.', () {
     var obj = Lc3DartVm();
     obj.add(int.parse('0001000001100011', radix: 2));
@@ -28,18 +28,18 @@ void testAddOpCode() {
   });
 }
 
-void testAndOpCode() {
+void testAndVm() {
   test('And with positive immediate', () {
     var obj = Lc3DartVm();
     obj.registers[Registers.R1] = 7;
-    obj.and(int.parse('0101000001100101'));
+    obj.and(int.parse('0101000001100101', radix: 2));
     expect(obj.registers[Registers.R0], 5);
   });
 
   test('And with negative immediate', () {
     var obj = Lc3DartVm();
     obj.registers[Registers.R1] = 7;
-    obj.and(int.parse('0101000001111111'));
+    obj.and(int.parse('0101000001111111', radix: 2));
     expect(obj.registers[Registers.R0], 7);
   });
 
@@ -47,8 +47,17 @@ void testAndOpCode() {
     var obj = Lc3DartVm();
     obj.registers[Registers.R1] = 7;
     obj.registers[Registers.R2] = 3;
-    obj.and(int.parse('0101000001000010'));
+    obj.and(int.parse('0101000001000010', radix: 2));
     expect(obj.registers[Registers.R0], 3);
+  });
+}
+
+void testNotVm() {
+  test('Successfully execute NOT.', () {
+    var obj = Lc3DartVm();
+    obj.registers[Registers.R1] = 10;
+    obj.not(int.parse('1001000001111111', radix: 2));
+    expect(obj.registers[Registers.R0], 65525);
   });
 }
 
