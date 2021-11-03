@@ -130,11 +130,16 @@ class Lc3DartVm {
   }
 
   int signExtend(int number, int bitCount) {
+    // Truncate number to low 16 bits,
+    // this gets around needing to use
+    // actual 16 bit ints which are only
+    // partially implemented in dart.
+    number = number & 0xFFFF;
     var highBitSet = (number >> (bitCount - 1)) & 1 == 1;
     if (highBitSet) {
       number = number | (0xFFFF << bitCount);
     }
-    return number;
+    return number.toSigned(16);
   }
 
   int readMem(int address) {

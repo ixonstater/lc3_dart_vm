@@ -26,6 +26,7 @@ void testAssembler() {
 
 void testVm() {
   testAddOpCode();
+  testSignExtend();
 }
 
 void main(List<String> args) {
