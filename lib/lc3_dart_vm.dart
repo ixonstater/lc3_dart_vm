@@ -101,6 +101,7 @@ class Lc3DartVm {
       case OpCodes.RTI:
         break;
       case OpCodes.NOT:
+        not(instruction);
         break;
       case OpCodes.LDI:
         break;
@@ -141,6 +142,12 @@ class Lc3DartVm {
       var sourceTwoReg = inst & 7;
       registers[destReg] = registers[sourceReg] & registers[sourceTwoReg];
     }
+  }
+
+  void not(int inst) {
+    var destReg = (inst >> 9) & 7;
+    var sourceReg = (inst >> 6) & 7;
+    registers[destReg] = ~registers[sourceReg];
   }
 
   int signExtend(int number, int bitCount) {
