@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:io';
 
-import 'package:lc3_dart_vm/lc3_dart_assembler.dart';
+import 'package:lc3_dart_vm/lc3_dart_assembler.dart' show Lc3DartAssembler;
 
 class Registers {
   static const int R0 = 0;
@@ -89,6 +89,7 @@ class Lc3DartVm {
         ld(instruction);
         break;
       case OpCodes.ST:
+        st(instruction);
         break;
       case OpCodes.JSR:
         break;
@@ -99,9 +100,10 @@ class Lc3DartVm {
         ldr(instruction);
         break;
       case OpCodes.STR:
+        str(instruction);
         break;
       case OpCodes.RTI:
-        break;
+        throw Exception('Unimplemented opcode RTI encountered.');
       case OpCodes.NOT:
         not(instruction);
         break;
@@ -109,11 +111,12 @@ class Lc3DartVm {
         ldi(instruction);
         break;
       case OpCodes.STI:
+        sti(instruction);
         break;
       case OpCodes.JMP:
         break;
       case OpCodes.RES:
-        break;
+        throw Exception('Unimplemented opcode RES encountered.');
       case OpCodes.LEA:
         lea(instruction);
         break;
@@ -191,6 +194,27 @@ class Lc3DartVm {
     updateFlags(destReg);
   }
 
+  void st(int inst) {
+    var sourceReg = (inst >> 9) & 7;
+    var address = signExtend(inst & 511, 9) + registers[Registers.PC];
+    writeMem(address, registers[sourceReg]);
+  }
+
+  void str(int inst) {
+    var sourceReg = (inst >> 9) & 7;
+    var baseReg = (inst >> 6) & 7;
+    var offset6 = signExtend(inst & 6, 6);
+    var address = registers[baseReg] + offset6;
+    writeMem(address, registers[sourceReg]);
+  }
+
+  void sti(int inst) {
+    var sourceReg = (inst >> 9) & 7;
+    var offset9 = signExtend(inst & 511, 9) + registers[Registers.PC];
+    var address = readMem(offset9);
+    writeMem(address, registers[sourceReg]);
+  }
+
   void updateFlags(int reg) {
     if (registers[reg] == 0) {
       registers[Registers.COND] = Conditionals.ZERO;
@@ -212,6 +236,10 @@ class Lc3DartVm {
       number = number | (0xFFFF << bitCount);
     }
     return number.toSigned(16);
+  }
+
+  void writeMem(int address, int value) {
+    memory[address] = value;
   }
 
   int readMem(int address) {
