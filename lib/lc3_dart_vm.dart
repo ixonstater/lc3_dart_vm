@@ -38,9 +38,23 @@ class OpCodes {
 }
 
 class Conditionals {
-  static int POS = 1 << 0; /* P */
-  static int ZERO = 1 << 1; /* Z */
-  static int NEG = 1 << 2; /* N */
+  static int POS = 1 << 0;
+  static int ZERO = 1 << 1;
+  static int NEG = 1 << 2;
+}
+
+class Traps {
+  static const int GETC = 32;
+  static const int OUT = 33;
+  static const int PUTS = 34;
+  static const int IN = 35;
+  static const int PUTSP = 36;
+  static const int HALT = 37;
+}
+
+class MemoryRegisters {
+  static const int MR_KBSR = 0xFE00; /* keyboard status */
+  static const int MR_KBDR = 0xFE02; /* keyboard data */
 }
 
 class Lc3DartVm {
@@ -250,6 +264,47 @@ class Lc3DartVm {
     }
   }
 
+  void trap(int inst) {
+    var trapCode = signExtend(inst & 255, 8);
+    switch (trapCode) {
+      case Traps.GETC:
+        registers[Registers.R0] = stdin.readByteSync();
+        break;
+      case Traps.OUT:
+        stdout.write(registers[Registers.R0].toString());
+        break;
+      case Traps.PUTSP:
+        var start = registers[Registers.R0];
+        var char = readMem(start);
+        while (char != 0) {
+          var c1 = char >> 8;
+          var c2 = char & 255;
+          stdout.write(c1);
+          stdout.write(c2);
+          start++;
+          char = readMem(start);
+        }
+        break;
+      case Traps.PUTS:
+        var start = registers[Registers.R0];
+        var char = readMem(start);
+        while (char != 0) {
+          stdout.write(char);
+          start++;
+          char = readMem(start);
+        }
+        break;
+      case Traps.IN:
+        stdout.write('Enter a character: ');
+        var char = stdin.readByteSync();
+        stdout.write(char);
+        registers[Registers.R0] = char;
+        break;
+      case Traps.HALT:
+        exit(0);
+    }
+  }
+
   void updateFlags(int reg) {
     if (registers[reg] == 0) {
       registers[Registers.COND] = Conditionals.ZERO;
@@ -278,6 +333,7 @@ class Lc3DartVm {
   }
 
   int readMem(int address) {
+    if (address == MemoryRegisters.MR_KBSR) {}
     return memory[address];
   }
 
