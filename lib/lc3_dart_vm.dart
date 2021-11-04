@@ -92,6 +92,7 @@ class Lc3DartVm {
         st(instruction);
         break;
       case OpCodes.JSR:
+        jsr(instruction);
         break;
       case OpCodes.AND:
         and(instruction);
@@ -114,6 +115,7 @@ class Lc3DartVm {
         sti(instruction);
         break;
       case OpCodes.JMP:
+        jmp(instruction);
         break;
       case OpCodes.RES:
         throw Exception('Unimplemented opcode RES encountered.');
@@ -213,6 +215,24 @@ class Lc3DartVm {
     var offset9 = signExtend(inst & 511, 9) + registers[Registers.PC];
     var address = readMem(offset9);
     writeMem(address, registers[sourceReg]);
+  }
+
+  void jsr(int inst) {
+    registers[Registers.R7] = registers[Registers.PC];
+    var useReg = (inst >> 11) & 1 == 0;
+    if (useReg) {
+      var reg = (inst >> 6) & 7;
+      registers[Registers.PC] = registers[reg];
+    } else {
+      var address = signExtend(inst & 2047, 11) + registers[Registers.PC];
+      registers[Registers.PC] = address;
+    }
+  }
+
+  void jmp(int inst) {
+    var baseReg = (inst >> 6) & 7;
+    var address = registers[baseReg];
+    registers[Registers.PC] = address;
   }
 
   void updateFlags(int reg) {
