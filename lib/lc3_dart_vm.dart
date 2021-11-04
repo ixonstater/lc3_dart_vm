@@ -86,6 +86,7 @@ class Lc3DartVm {
         add(instruction);
         break;
       case OpCodes.LD:
+        ld(instruction);
         break;
       case OpCodes.ST:
         break;
@@ -104,6 +105,7 @@ class Lc3DartVm {
         not(instruction);
         break;
       case OpCodes.LDI:
+        ldi(instruction);
         break;
       case OpCodes.STI:
         break;
@@ -112,6 +114,7 @@ class Lc3DartVm {
       case OpCodes.RES:
         break;
       case OpCodes.LEA:
+        lea(instruction);
         break;
       case OpCodes.TRAP:
         break;
@@ -155,6 +158,29 @@ class Lc3DartVm {
     updateFlags(destReg);
   }
 
+  void ld(int inst) {
+    var destReg = (inst >> 9) & 7;
+    var offset9 = inst & 511;
+    registers[destReg] =
+        readMem(signExtend(offset9, 9) + registers[Registers.PC]);
+    updateFlags(destReg);
+  }
+
+  void ldi(int inst) {
+    var destReg = (inst >> 9) & 7;
+    var offset9 = inst & 511;
+    registers[destReg] =
+        readMem(readMem(signExtend(offset9, 9) + registers[Registers.PC]));
+    updateFlags(destReg);
+  }
+
+  void lea(int inst) {
+    var destReg = (inst >> 9) & 7;
+    var offset9 = inst & 511;
+    registers[destReg] = registers[Registers.PC] + signExtend(offset9, 9);
+    updateFlags(destReg);
+  }
+
   void updateFlags(int reg) {
     if (registers[reg] == 0) {
       registers[Registers.COND] = Conditionals.ZERO;
@@ -180,6 +206,14 @@ class Lc3DartVm {
 
   int readMem(int address) {
     return memory[address];
+  }
+
+  void printMem(int start, int offset) {
+    var end = start + offset;
+    while (start < end) {
+      printBin(memory[start]);
+      start++;
+    }
   }
 }
 
