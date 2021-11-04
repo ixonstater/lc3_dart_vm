@@ -96,6 +96,7 @@ class Lc3DartVm {
         and(instruction);
         break;
       case OpCodes.LDR:
+        ldr(instruction);
         break;
       case OpCodes.STR:
         break;
@@ -178,6 +179,15 @@ class Lc3DartVm {
     var destReg = (inst >> 9) & 7;
     var offset9 = inst & 511;
     registers[destReg] = registers[Registers.PC] + signExtend(offset9, 9);
+    updateFlags(destReg);
+  }
+
+  void ldr(int inst) {
+    var destReg = (inst >> 9) & 7;
+    var baseReg = (inst >> 6) & 7;
+    var offset6 = signExtend(inst & 63, 6);
+    var address = registers[baseReg] + offset6;
+    registers[destReg] = readMem(address);
     updateFlags(destReg);
   }
 
