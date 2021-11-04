@@ -248,7 +248,7 @@ class Lc3DartAssembler {
     }
     // Special case for BR opcode which does not fit in the
     // simple matching logic of the switch case.
-    else if (commands[0].toUpperCase().contains(OpCodes.BR)) {
+    else if (commands[0].toUpperCase().substring(0, 2) == OpCodes.BR) {
       writeBr();
       return;
     } else {
