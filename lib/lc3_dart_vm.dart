@@ -65,6 +65,10 @@ class Lc3DartVm {
   bool running = true;
   Console console = Console();
 
+  Lc3DartVm() {
+    console.rawMode = true;
+  }
+
   Future<void> start(String path) async {
     await loadProgram(path);
     // await assembleOnTheFly(path, this);
@@ -341,7 +345,15 @@ class Lc3DartVm {
   }
 
   int readMem(int address) {
-    if (address == MemoryRegisters.MR_KBSR) {}
+    if (address == MemoryRegisters.MR_KBSR) {
+      var codeUnit = stdin.readByteSync();
+      if (codeUnit > 0) {
+        memory[MemoryRegisters.MR_KBSR] = (1 << 15);
+        memory[MemoryRegisters.MR_KBDR] = codeUnit;
+      } else {
+        memory[MemoryRegisters.MR_KBSR] = 0;
+      }
+    }
     return memory[address];
   }
 
@@ -354,18 +366,11 @@ class Lc3DartVm {
   }
 
   int getKey() {
-    var key = console.readKey();
-    if (key.isControl) {
-      if (key.controlChar == ControlCharacter.enter) {
-        return '\n'.codeUnitAt(0);
-      } else if (key.controlChar == ControlCharacter.ctrlQ) {
-        exit(0);
-      }
-
-      return 0;
-    } else {
-      return key.char.codeUnitAt(0);
+    var codeUnit = 0;
+    while (codeUnit <= 0) {
+      codeUnit = stdin.readByteSync();
     }
+    return codeUnit;
   }
 }
 
