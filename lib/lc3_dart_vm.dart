@@ -81,6 +81,7 @@ class Lc3DartVm {
     var op = instruction >> 12;
     switch (op) {
       case OpCodes.BR:
+        br(instruction);
         break;
       case OpCodes.ADD:
         add(instruction);
@@ -233,6 +234,20 @@ class Lc3DartVm {
     var baseReg = (inst >> 6) & 7;
     var address = registers[baseReg];
     registers[Registers.PC] = address;
+  }
+
+  void br(int inst) {
+    var n = (inst >> 11) & 1 == 1;
+    var z = (inst >> 10) & 1 == 1;
+    var p = (inst >> 9) & 1 == 1;
+    var shouldBranch = false;
+    shouldBranch |= n & (registers[Registers.COND] == Conditionals.NEG);
+    shouldBranch |= z & (registers[Registers.COND] == Conditionals.ZERO);
+    shouldBranch |= p & (registers[Registers.COND] == Conditionals.POS);
+    if (shouldBranch) {
+      var address = signExtend(inst & 511, 9);
+      registers[Registers.PC] = address;
+    }
   }
 
   void updateFlags(int reg) {
