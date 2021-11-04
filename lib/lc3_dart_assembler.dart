@@ -202,8 +202,8 @@ class Lc3DartAssembler {
   Future<void> assemble(String path) async {
     await symbols.markSymbols(path);
     await processOpCodes(path);
-    // await writeBinaryFile(path);
-    // await symbols.writeSymbolsFile(path);
+    await writeBinaryFile(path);
+    await symbols.writeSymbolsFile(path);
     // await writeBinRep();
   }
 

@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:io';
-
+import 'package:dart_console/dart_console.dart';
 import 'package:lc3_dart_vm/lc3_dart_assembler.dart' show Lc3DartAssembler;
 
 class Registers {
@@ -61,15 +62,15 @@ class Lc3DartVm {
   // Use 2^16 here to avoid using dart numerics package.
   Uint16List memory = Uint16List(pow(2, 16).toInt());
   Uint16List registers = Uint16List(Registers.COUNT);
-  int condition = Conditionals.ZERO;
   bool running = true;
+  Console console = Console();
 
   Future<void> start(String path) async {
-    // await loadProgram(path);
-    await assembleOnTheFly(path, this);
+    await loadProgram(path);
+    // await assembleOnTheFly(path, this);
     while (running) {
       var instruction = readMem(registers[Registers.PC]++);
-      processInstruction(instruction);
+      await processInstruction(instruction);
     }
   }
 
@@ -91,7 +92,7 @@ class Lc3DartVm {
     }
   }
 
-  void processInstruction(int instruction) {
+  Future<void> processInstruction(int instruction) async {
     var op = instruction >> 12;
     switch (op) {
       case OpCodes.BR:
@@ -138,6 +139,7 @@ class Lc3DartVm {
         lea(instruction);
         break;
       case OpCodes.TRAP:
+        await trap(instruction);
         break;
     }
   }
@@ -259,19 +261,21 @@ class Lc3DartVm {
     shouldBranch |= z & (registers[Registers.COND] == Conditionals.ZERO);
     shouldBranch |= p & (registers[Registers.COND] == Conditionals.POS);
     if (shouldBranch) {
-      var address = signExtend(inst & 511, 9);
+      var address = signExtend(inst & 511, 9) + registers[Registers.PC];
       registers[Registers.PC] = address;
     }
   }
 
-  void trap(int inst) {
+  Future<void> trap(int inst) async {
     var trapCode = signExtend(inst & 255, 8);
     switch (trapCode) {
       case Traps.GETC:
-        registers[Registers.R0] = stdin.readByteSync();
+        registers[Registers.R0] = getKey();
         break;
       case Traps.OUT:
-        stdout.write(registers[Registers.R0].toString());
+        var char = String.fromCharCode(registers[Registers.R0]);
+        stdout.write(char);
+        await stdout.flush();
         break;
       case Traps.PUTSP:
         var start = registers[Registers.R0];
@@ -279,29 +283,33 @@ class Lc3DartVm {
         while (char != 0) {
           var c1 = char >> 8;
           var c2 = char & 255;
-          stdout.write(c1);
-          stdout.write(c2);
+          stdout.write(String.fromCharCode(c1));
+          stdout.write(String.fromCharCode(c2));
           start++;
           char = readMem(start);
         }
+        await stdout.flush();
         break;
       case Traps.PUTS:
         var start = registers[Registers.R0];
         var char = readMem(start);
         while (char != 0) {
-          stdout.write(char);
+          stdout.write(String.fromCharCode(char));
           start++;
           char = readMem(start);
+          await stdout.flush();
         }
+        await stdout.flush();
         break;
       case Traps.IN:
         stdout.write('Enter a character: ');
-        var char = stdin.readByteSync();
-        stdout.write(char);
+        var char = getKey();
+        stdout.write(String.fromCharCode(char));
+        await stdout.flush();
         registers[Registers.R0] = char;
         break;
       case Traps.HALT:
-        exit(0);
+        running = false;
     }
   }
 
@@ -344,10 +352,27 @@ class Lc3DartVm {
       start++;
     }
   }
+
+  int getKey() {
+    var key = console.readKey();
+    if (key.isControl) {
+      if (key.controlChar == ControlCharacter.enter) {
+        return '\n'.codeUnitAt(0);
+      } else if (key.controlChar == ControlCharacter.ctrlQ) {
+        exit(0);
+      }
+
+      return 0;
+    } else {
+      return key.char.codeUnitAt(0);
+    }
+  }
 }
 
 void printBin(int num) {
-  print(BigInt.from(num).toUnsigned(16).toRadixString(2));
+  var str = BigInt.from(num).toUnsigned(16).toRadixString(2);
+  str = '0' * (16 - str.length) + str;
+  print(str);
 }
 
 Future<void> assembleOnTheFly(String path, Lc3DartVm vm) async {

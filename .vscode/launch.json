@@ -8,19 +8,22 @@
             "name": "Assembler",
             "request": "launch",
             "type": "dart",
-            "program": "${workspaceRoot}/bin/run_assembler.dart"
+            "program": "${workspaceRoot}/bin/run_assembler.dart",
+            "console": "terminal"
         },
         {
             "name": "Tests",
             "request": "launch",
             "type": "dart",
-            "program": "${workspaceRoot}/bin/run_tests.dart"
+            "program": "${workspaceRoot}/bin/run_tests.dart",
+            "console": "terminal"
         },
         {
             "name": "VM",
             "request": "launch",
             "type": "dart",
-            "program": "${workspaceRoot}/bin/run_vm.dart"
+            "program": "${workspaceRoot}/bin/run_vm.dart",
+            "console": "terminal"
         }
     ]
 }
