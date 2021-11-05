@@ -1,7 +1,7 @@
 import 'package:lc3_dart_vm/lc3_dart_vm.dart';
 
-void main(List<String> args) {
+Future<void> main(List<String> args) async {
   var obj = Lc3DartVm();
-  obj.start('./temp/test.obj');
+  await obj.start('./temp/test.obj');
   obj.console.rawMode = false;
 }
