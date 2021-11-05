@@ -71,7 +71,6 @@ class Lc3DartVm {
 
   Future<void> start(String path) async {
     await loadProgram(path);
-    // await assembleOnTheFly(path, this);
     while (running) {
       var instruction = readMem(registers[Registers.PC]++);
       await processInstruction(instruction);
@@ -79,25 +78,30 @@ class Lc3DartVm {
   }
 
   Future<void> loadProgram(String programPath) async {
-    var file = File(programPath);
-    var contents = await file.readAsBytes();
-    var offset = 0;
-    int? pc;
-    while (offset < contents.length) {
-      var instruction = contents[offset] << 8 | contents[offset + 1];
-      if (pc == null) {
-        pc = instruction;
-        registers[Registers.PC] = pc;
-      } else {
-        memory[pc] = instruction;
-        pc++;
+    try {
+      var file = File(programPath);
+      var contents = await file.readAsBytes();
+      var offset = 0;
+      int? pc;
+      while (offset < contents.length) {
+        var instruction = contents[offset] << 8 | contents[offset + 1];
+        if (pc == null) {
+          pc = instruction;
+          registers[Registers.PC] = pc;
+        } else {
+          memory[pc] = instruction;
+          pc++;
+        }
+        offset += 2;
       }
-      offset += 2;
+    } on FileSystemException {
+      print('Could not locate file: $programPath, exiting.');
+      console.rawMode = false;
+      exit(1);
     }
   }
 
   Future<void> processInstruction(int instruction) async {
-    // printBin(instruction);
     var op = instruction >> 12;
     switch (op) {
       case OpCodes.BR:
