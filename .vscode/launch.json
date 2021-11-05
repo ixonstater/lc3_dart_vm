@@ -23,7 +23,7 @@
             "request": "launch",
             "type": "dart",
             "program": "${workspaceRoot}/bin/run_vm.dart",
-            "console": "terminal"
+            "console": "debugConsole"
         }
     ]
 }

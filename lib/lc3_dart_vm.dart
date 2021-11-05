@@ -97,6 +97,7 @@ class Lc3DartVm {
   }
 
   Future<void> processInstruction(int instruction) async {
+    // printBin(instruction);
     var op = instruction >> 12;
     switch (op) {
       case OpCodes.BR:
@@ -226,7 +227,7 @@ class Lc3DartVm {
   void str(int inst) {
     var sourceReg = (inst >> 9) & 7;
     var baseReg = (inst >> 6) & 7;
-    var offset6 = signExtend(inst & 6, 6);
+    var offset6 = signExtend(inst & 63, 6);
     var address = registers[baseReg] + offset6;
     writeMem(address, registers[sourceReg]);
   }
