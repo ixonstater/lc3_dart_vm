@@ -362,14 +362,6 @@ class Lc3DartVm {
     return memory[address];
   }
 
-  void printMem(int start, int offset) {
-    var end = start + offset;
-    while (start < end) {
-      printBin(memory[start]);
-      start++;
-    }
-  }
-
   int getKey() {
     var codeUnit = 0;
     while (codeUnit <= 0) {
